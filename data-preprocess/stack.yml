@@ -1,0 +1,20 @@
+version: 1.0
+provider:
+  name: openfaas
+  gateway: http://10.20.1.54:31112
+functions:
+  # load-data:
+  #   lang: python3
+  #   handler: ./load-data
+  #   image: james759426/load-data:0.0.1
+
+  # time-parser:
+  #   lang: python3
+  #   handler: ./time-parser
+  #   image: james759426/time-parser:0.0.1
+
+  # data-clean:
+  #   lang: python3
+  #   handler: ./data-clean
+  #   image: james759426/data-clean:0.0.1
+
