@@ -17,4 +17,8 @@ functions:
   #   lang: python3
   #   handler: ./data-clean
   #   image: james759426/data-clean:0.0.1
+  #   environment:
+  #     read_timeout: "60s"
+  #     write_timeout: "60s"
+  #     exec_timeout: "60s"
 
