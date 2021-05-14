@@ -2,6 +2,7 @@ import pandas as pd
 from minio import Minio
 import json
 from datetime import datetime, timedelta
+from minio.error import S3Error
 def handle(req):
 
     client = Minio(
@@ -16,8 +17,6 @@ def handle(req):
     except ResponseError as err:
         print(err)
 
-    # json_req = json.loads(req)
-    # file_path = requests.get(json_req["path"])
     data = pd.read_csv("/home/app/test.csv").copy()
     
     local_time = data['LocalTime'].copy()
@@ -42,7 +41,7 @@ def handle(req):
 
     try:
         client.fput_object('time-parse', 'time-parse.csv', '/home/app/parser-test.csv')
-    except ResponseError as err:
-        print(err)
+    except S3Error as exc:
+        print("error occurred.", exc)
 
     return 1

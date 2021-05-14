@@ -1,7 +1,9 @@
-import pandas as pd 
+import pandas as pd
+import numpy as np
 from minio import Minio
 import json
 from datetime import datetime, timedelta
+from minio.error import S3Error
 def handle(req):
 
     client = Minio(
@@ -17,14 +19,52 @@ def handle(req):
         print(err)
 
     data = pd.read_csv("/home/app/data-clean.csv").copy()
+
+    # 每個都要加
+    for i in range(data.shape[0]):
+        data["LocalTime"][i] = datetime.strptime(data["LocalTime"][i], '%Y-%m-%d %H:%M:%S')
+    data = data.set_index('LocalTime') 
+    # 
+
     x_train, y_train = buildTrain(data=data)
 
-    # 要儲存x_train, y_train
     x_train, y_train = shuffle(x_train=x_train, y_train=y_train)
+
+    x_dict = dict()
+    y_dict = dict()
+    for i in range(len(x_train)):
+        x_dict[str(i)] = dict()
+        for j in range(len(x_train[i])):
+            x_dict[str(i)][str(j)] = x_train[i][j][0]
+
+    for i in range(len(y_train)):
+        y_dict[str(i)] = y_train[i][0]
+
+    with open('/home/app/xt.json', 'w', encoding='utf-8') as f:
+        json.dump(x_dict, f)
+
+    with open('/home/app/yt.json', 'w', encoding='utf-8') as f:
+        json.dump(y_dict, f)
+
+    found = client.bucket_exists("train-dataset")
+    if not found:
+        client.make_bucket("train-dataset")
+    else:
+        print("Bucket 'train-dataset' already exists")
+
+    try:
+        client.fput_object('train-dataset', 'xt.json', '/home/app/xt.json')
+        client.fput_object('train-dataset', 'yt.json', '/home/app/yt.json')
+    except S3Error as exc:
+        print("error occurred.", exc)
 
     return 1
 
-def buildTrain(past_day=24, futureDay=1, data):
+def buildTrain(data, past_day=24, futureDay=1):
+        #全域變數   
+        target_field = 'Temp'
+        direction = True
+
         x_train = []
         y_train = []
         if direction:
@@ -49,7 +89,7 @@ def buildTrain(past_day=24, futureDay=1, data):
         y_train = np.array(y_train)
         return x_train, y_train
 
-def shuffle(seed=10, x_train, y_train):
+def shuffle(x_train, y_train, seed=10):
     np.random.seed(seed)
     randomList = np.arange(x_train.shape[0])
     np.random.shuffle(randomList)

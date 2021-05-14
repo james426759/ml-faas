@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import pika
+from minio.error import S3Error
 def handle(req):
 
     client = Minio(
@@ -52,8 +53,8 @@ def handle(req):
 
     try:
         client.fput_object('data-clean', 'data-clean.csv', '/home/app/data-clean.csv')
-    except ResponseError as err:
-        print(err)
+    except S3Error as exc:
+        print("error occurred.", exc)
 
     return 1
 
