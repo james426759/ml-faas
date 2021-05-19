@@ -1,5 +1,5 @@
 FROM --platform=${TARGETPLATFORM:-linux/amd64} ghcr.io/openfaas/classic-watchdog:0.1.5 as watchdog
-FROM --platform=${TARGETPLATFORM:-linux/amd64} python:3.7-alpine
+FROM --platform=${TARGETPLATFORM:-linux/amd64} python:3.6.9
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -9,24 +9,26 @@ ARG ADDITIONAL_PACKAGE
 
 COPY --from=watchdog /fwatchdog /usr/bin/fwatchdog
 RUN chmod +x /usr/bin/fwatchdog
-RUN apk update
-RUN apk --no-cache add ca-certificates ${ADDITIONAL_PACKAGE}
-RUN apk add make automake gcc g++ subversion python3-dev
+RUN apt update
+RUN apt install ca-certificates
+# RUN apt install ca-certificates ${ADDITIONAL_PACKAGE}
+# RUN apt install make automake gcc g++ subversion python3-dev
 
 # Add non root user
-RUN addgroup -S app && adduser app -S -G app
+# RUN addgroup -S app && adduser app -S -G app
 
 WORKDIR /home/app/
 
 # User define
 RUN pip install pandas
+RUN pip install tensorflow==1.15
+RUN pip install keras==2.3.1
 
 COPY index.py           .
 COPY requirements.txt   .
 
-RUN chown -R app /home/app && \
-  mkdir -p /home/app/python && chown -R app /home/app
-USER app
+RUN mkdir -p /home/app/python
+# USER app
 ENV PATH=$PATH:/home/app/.local/bin:/home/app/python/bin/
 ENV PYTHONPATH=$PYTHONPATH:/home/app/python
 
@@ -47,10 +49,9 @@ USER root
 COPY function           function
 
 # Allow any user-id for OpenShift users.
-RUN chown -R app:app ./ && \
-  chmod -R 777 /home/app/python
+RUN chmod -R 777 /home/app/python
 
-USER app
+# USER app
 
 ENV fprocess="python3 index.py"
 EXPOSE 8080

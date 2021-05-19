@@ -16,9 +16,17 @@ functions:
   #   lang: python3
   #   handler: ./train-model-build
   #   image: james759426/train-model-build:0.0.1
+  #   environment:
+  #     read_timeout: "60s"
+  #     write_timeout: "60s"
+  #     exec_timeout: "60s"    
 
   # train-model:
   #   lang: python3
   #   handler: ./train-model
   #   image: james759426/train-model:0.0.1
+  #   environment:
+  #     read_timeout: "21600s"
+  #     write_timeout: "21600s"
+  #     exec_timeout: "21600s"
 
