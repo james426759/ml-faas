@@ -1,0 +1,8 @@
+apiVersion: openfaas.com/v1
+kind: Function
+metadata:
+  name: time-parser
+  namespace: openfaas-fn
+spec:
+  name: time-parser
+  image: james759426/time-parser:0.0.1

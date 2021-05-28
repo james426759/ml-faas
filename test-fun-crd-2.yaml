@@ -1,0 +1,11 @@
+apiVersion: openfaas.com/v1
+kind: Function
+metadata:
+  name: nodeinfo
+  namespace: openfaas-fn
+spec:
+  name: nodeinfo
+  handler: node main.js
+  image: functions/nodeinfo:latest
+  labels:
+    com.openfaas.scale.min: "0"
