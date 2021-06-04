@@ -4,6 +4,7 @@ from minio import Minio
 import json
 from datetime import datetime, timedelta
 from minio.error import S3Error
+import os
 def handle(req):
 
     client = Minio(
@@ -46,15 +47,15 @@ def handle(req):
     with open('/home/app/yt.json', 'w', encoding='utf-8') as f:
         json.dump(y_dict, f)
 
-    found = client.bucket_exists("train-dataset")
+    found = client.bucket_exists(os.environ['bucket_name'])
     if not found:
-        client.make_bucket("train-dataset")
+        client.make_bucket(os.environ['bucket_name'])
     else:
-        print("Bucket 'train-dataset' already exists")
+        print(f"""Bucket {os.environ['bucket_name']} already exists""")
 
     try:
-        client.fput_object('train-dataset', 'xt.json', '/home/app/xt.json')
-        client.fput_object('train-dataset', 'yt.json', '/home/app/yt.json')
+        client.fput_object(os.environ['bucket_name'], 'xt.json', '/home/app/xt.json')
+        client.fput_object(os.environ['bucket_name'], 'yt.json', '/home/app/yt.json')
     except S3Error as exc:
         print("error occurred.", exc)
 

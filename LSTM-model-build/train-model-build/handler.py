@@ -8,6 +8,7 @@ import tensorflow as tf
 from minio import Minio
 from minio.error import S3Error
 import json
+import os
 
 def handle(req):
 
@@ -70,16 +71,16 @@ def handle(req):
     # with open('/home/app/y_train_data.json', 'w', encoding='utf-8') as f:
     #     json.dump(y_dict, f)
 
-    found = client.bucket_exists("train-model-setup")
+    found = client.bucket_exists(os.environ['bucket_name'])
     if not found:
-        client.make_bucket("train-model-setup")
+        client.make_bucket(os.environ['bucket_name'])
     else:
-        print("Bucket 'train-model-setup' already exists")
+        print(f"""Bucket {os.environ['bucket_name']} already exists""")
 
     try:
         # client.fput_object('train-model-setup', 'x_train_data.json', '/home/app/x_train_data.json')
         # client.fput_object('train-model-setup', 'y_train_data.json', '/home/app/y_train_data.json')
-        client.fput_object('train-model-setup', 'model_setup.h5', '/home/app/model_setup.h5')
+        client.fput_object(os.environ['bucket_name'], 'model_setup.h5', '/home/app/model_setup.h5')
     except S3Error as exc:
         print("error occurred.", exc)
 

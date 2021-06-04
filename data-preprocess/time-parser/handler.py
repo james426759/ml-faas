@@ -3,6 +3,7 @@ from minio import Minio
 import json
 from datetime import datetime, timedelta
 from minio.error import S3Error
+import os
 def handle(req):
 
     client = Minio(
@@ -33,14 +34,14 @@ def handle(req):
     data = data.set_index('LocalTime')
     data.to_csv("/home/app/parser-test.csv")
 
-    found = client.bucket_exists("time-parser")
+    found = client.bucket_exists(os.environ['bucket_name'])
     if not found:
-        client.make_bucket("time-parser")
+        client.make_bucket(os.environ['bucket_name'])
     else:
-        print("Bucket 'time-parser' already exists")
+        print(f"""Bucket {os.environ['bucket_name']} already exists""")
 
     try:
-        client.fput_object('time-parser', 'time-parser.csv', '/home/app/parser-test.csv')
+        client.fput_object(os.environ['bucket_name'], 'time-parser.csv', '/home/app/parser-test.csv')
     except S3Error as exc:
         print("error occurred.", exc)
 
