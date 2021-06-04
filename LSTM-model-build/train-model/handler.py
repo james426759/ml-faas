@@ -8,6 +8,7 @@ import tensorflow as tf
 from minio import Minio
 from minio.error import S3Error
 import json
+import os
 
 def handle(req):
 
@@ -57,14 +58,14 @@ def handle(req):
     model = train(model, x_train, y_train)
     modelSave(model, model_name='/home/app/model_LSTM.h5')
     
-    found = client.bucket_exists("model-lstm")
+    found = client.bucket_exists(os.environ['bucket_name'])
     if not found:
-        client.make_bucket("model-lstm")
+        client.make_bucket(os.environ['bucket_name'])
     else:
-        print("Bucket 'model-lstm' already exists")
+        print(f"""Bucket {os.environ['bucket_name']} already exists""")
 
     try:
-        client.fput_object('model-lstm', 'model-lstm.h5', '/home/app/model_LSTM.h5')
+        client.fput_object(os.environ['bucket_name'], 'model-lstm.h5', '/home/app/model_LSTM.h5')
     except S3Error as exc:
         print("error occurred.", exc)
 

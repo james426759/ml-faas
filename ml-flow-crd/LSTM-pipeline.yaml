@@ -25,4 +25,4 @@ spec:
       name: model-serving
       step:
       - name: model-serving-fun
-        mlfun: wheam/model-serving-fun:0.0.1
+        mlfun: james759426/model-serving-fun:0.0.1

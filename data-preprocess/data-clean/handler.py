@@ -4,6 +4,7 @@ import numpy as np
 from datetime import datetime, timedelta
 import pika
 from minio.error import S3Error
+import os
 def handle(req):
 
     client = Minio(
@@ -45,14 +46,14 @@ def handle(req):
 
     data.to_csv("/home/app/data-clean.csv")
 
-    found = client.bucket_exists("data-clean")
+    found = client.bucket_exists(os.environ['bucket_name'])
     if not found:
-        client.make_bucket("data-clean")
+        client.make_bucket(os.environ['bucket_name'])
     else:
-        print("Bucket 'data-clean' already exists")
+        print(f"""Bucket {os.environ['bucket_name']} already exists""")
 
     try:
-        client.fput_object('data-clean', 'data-clean.csv', '/home/app/data-clean.csv')
+        client.fput_object(os.environ['bucket_name'], 'data-clean.csv', '/home/app/data-clean.csv')
     except S3Error as exc:
         print("error occurred.", exc)
 

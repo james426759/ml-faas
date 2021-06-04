@@ -10,6 +10,7 @@ from keras.layers.normalization import BatchNormalization
 from keras.optimizers import Adam
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 import tensorflow as tf
+import os
 
 def handle(req):
     target_field = 'Temp'
@@ -37,14 +38,14 @@ def handle(req):
     data_ok = correction(data=data, past_day=24, direction=direction, model=model, target_field=target_field)
     data_ok.to_csv('/home/app/complete-data2.csv')
     
-    found = client.bucket_exists("complete-data")
+    found = client.bucket_exists(os.environ['bucket_name'])
     if not found:
-        client.make_bucket("complete-data")
+        client.make_bucket(os.environ['bucket_name'])
     else:
-        print("Bucket 'complete-data' already exists")
+        print(f"""Bucket {os.environ['bucket_name']} already exists""")
 
     try:
-        client.fput_object('complete-data', 'complete-data.csv', '/home/app/complete-data2.csv')
+        client.fput_object(os.environ['bucket_name'], 'complete-data.csv', '/home/app/complete-data2.csv')
     except S3Error as exc:
         print("error occurred.", exc)
 
