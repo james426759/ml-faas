@@ -1,4 +1,5 @@
 from minio import Minio
+import os
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
@@ -20,17 +21,21 @@ def handle(req):
         secure = False
     )
 
+    basic_basth = '/home/app'
+    file_name = req 
+    file_path = os.path.join(basic_basth, req)
+
     try:
         client.fget_object('model-lstm', 'model-lstm.h5', '/home/app/model-lstm.h5')
-        client.fget_object('data-clean', 'data-clean.csv', '/home/app/data-clean.csv')
+        client.fget_object('user-upload-file', req, file_path)
     except ResponseError as err:
         print(err)
 
-    data = pd.read_csv('/home/app/data-clean.csv')
+    data = pd.read_csv(file_path)
     model = modelLoad(model_name='/home/app/model-lstm.h5')
     data = newField(data, target_field=target_field)
     data_ok = correction(data=data, past_day=24, direction=direction, model=model, target_field=target_field)
-    data_ok.to_csv('/home/app/complete-data.csv')
+    data_ok.to_csv('/home/app/complete-data2.csv')
     
     found = client.bucket_exists("complete-data")
     if not found:
@@ -39,7 +44,7 @@ def handle(req):
         print("Bucket 'complete-data' already exists")
 
     try:
-        client.fput_object('complete-data', 'complete-data.csv', '/home/app/complete-data.csv')
+        client.fput_object('complete-data', 'complete-data.csv', '/home/app/complete-data2.csv')
     except S3Error as exc:
         print("error occurred.", exc)
 

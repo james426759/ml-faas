@@ -35,12 +35,12 @@ def handle(req):
 
     found = client.bucket_exists("time-parser")
     if not found:
-        client.make_bucket("time-parse")
+        client.make_bucket("time-parser")
     else:
-        print("Bucket 'time-parse' already exists")
+        print("Bucket 'time-parser' already exists")
 
     try:
-        client.fput_object('time-parse', 'time-parse.csv', '/home/app/parser-test.csv')
+        client.fput_object('time-parser', 'time-parser.csv', '/home/app/parser-test.csv')
     except S3Error as exc:
         print("error occurred.", exc)
 

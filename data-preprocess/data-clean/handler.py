@@ -22,11 +22,11 @@ def handle(req):
     channel.queue_declare(queue='hello')
 
     try:
-        client.fget_object('time-parse', 'time-parse.csv', '/home/app/time-parse.csv')
-    except ResponseError as err:
+        client.fget_object('time-parser', 'time-parser.csv', '/home/app/time-parser.csv')
+    except S3Error as err:
         print(err)
 
-    data = pd.read_csv("/home/app/time-parse.csv").copy()
+    data = pd.read_csv("/home/app/time-parser.csv").copy()
 
     data = data.round(2)
 

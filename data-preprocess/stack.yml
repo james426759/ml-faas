@@ -8,19 +8,19 @@ functions:
 #     handler: ./load-data
 #     image: james759426/load-data-524:0.0.1
 
-#   time-parser:
-#     lang: python3
-#     handler: ./time-parser
-#     image: james759426/time-parser:0.0.1
-#     labels:
-#       com.openfaas.scale.min: "0"
+  time-parser:
+    lang: python3
+    handler: ./time-parser
+    image: james759426/time-parser:0.0.1
+    labels:
+      com.openfaas.scale.min: "0"
 
-#   data-clean:
-#     lang: python3
-#     handler: ./data-clean
-#     image: james759426/data-clean:0.0.1
-#     environment:
-#       read_timeout: "60s"
-#       write_timeout: "60s"
-#       exec_timeout: "60s"
+  data-clean:
+    lang: python3
+    handler: ./data-clean
+    image: james759426/data-clean:0.0.1
+    environment:
+      read_timeout: "60s"
+      write_timeout: "60s"
+      exec_timeout: "60s"
 

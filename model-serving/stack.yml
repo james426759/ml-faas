@@ -6,7 +6,7 @@ functions:
   model-serving:
     lang: python3
     handler: ./model-serving-fun
-    image: james759426/model-serving-fun:0.0.1
+    image: wheam/model-serving-fun:0.0.1
     environment:
       read_timeout: "21600s"
       write_timeout: "21600s"

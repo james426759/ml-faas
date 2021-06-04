@@ -18,8 +18,6 @@ metadata:
 spec:
   name: {step['name']}
   image: {step['mlfun']}
-  labels:
-    com.openfaas.scale.min: "0"
   environment:
     read_timeout: "21600s"
     write_timeout: "21600s"
