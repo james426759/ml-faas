@@ -4,31 +4,30 @@ import kubernetes
 import yaml
 @kopf.on.create('mlflows')
 def create_fn(spec, name, namespace, logger, **kwargs):
-    fun_flow = []
+    fun_flow = {}
     ml_pipelines = spec['pipeline']
-
-    for stage in ml_pipelines:
-        steps = ml_pipelines[stage]['step']
-        for step in steps:
-            data = f"""apiVersion: openfaas.com/v1
+    for key, stage in ml_pipelines.items():
+        steps = stage['step']
+        fun_flow[key] = []
+        for data in range(len(steps)):
+            ml_Fun = f"""apiVersion: openfaas.com/v1
 kind: Function
 metadata:
-  name: {name}-{step['name']}
+  name: {name}-{steps[data]['name']}
   namespace: openfaas-fn
 spec:
-  name: {name}-{step['name']}
-  image: {step['mlfun']}
+  name: {name}-{steps[data]['name']}
+  image: {steps[data]['mlfun']}
   labels:
     com.openfaas.scale.min: "0"
   environment:
     read_timeout: "21600s"
     write_timeout: "21600s"
     exec_timeout: "21600s"
-    bucket_name: {name}-{step['name']}
+    bucket_name: {name}-{steps[data]['name']}
 """
-            fun_api_name = f"""{name}-{step['name']}"""
-            fun_flow.append(fun_api_name)
-            os.system(f"cat <<EOF | kubectl apply -f - \n{data}\n")
+            fun_flow[key].append(steps[data]['name'])
+            os.system(f"cat <<EOF | kubectl apply -f - \n{ml_Fun}\n")
     return {'api_list': fun_flow}
 
 
