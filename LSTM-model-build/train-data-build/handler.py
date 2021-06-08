@@ -5,6 +5,9 @@ import json
 from datetime import datetime, timedelta
 from minio.error import S3Error
 import os
+import warnings
+from pandas.core.common import SettingWithCopyWarning
+
 def handle(req):
 
     client = Minio(
@@ -13,11 +16,20 @@ def handle(req):
         secret_key="secretsecret",
         secure = False
     )
+    warnings.simplefilter(action="ignore", category=SettingWithCopyWarning)
 
-    try:
-        client.fget_object('data-clean', 'data-clean.csv', '/home/app/data-clean.csv')
-    except ResponseError as err:
-        print(err)
+    data = json.loads(req)
+    fname = data['fname']
+    file_uuid = data['file_uuid']
+    last_pipeline_bucket_name = data['bucket_name']
+    pipeline = data['pipeline']
+    function_name = data['function_name']
+    last_pipeline_file_name = data['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
+    uuid_renamed = function_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'json'
+
+    
+    client.fget_object(last_pipeline_bucket_name, last_pipeline_file_name, '/home/app/data-clean.csv')
+
 
     data = pd.read_csv("/home/app/data-clean.csv").copy()
 
@@ -50,16 +62,12 @@ def handle(req):
     found = client.bucket_exists(os.environ['bucket_name'])
     if not found:
         client.make_bucket(os.environ['bucket_name'])
-    else:
-        print(f"""Bucket {os.environ['bucket_name']} already exists""")
 
-    try:
-        client.fput_object(os.environ['bucket_name'], 'xt.json', '/home/app/xt.json')
-        client.fput_object(os.environ['bucket_name'], 'yt.json', '/home/app/yt.json')
-    except S3Error as exc:
-        print("error occurred.", exc)
+    
+    client.fput_object(os.environ['bucket_name'], 'xt-'+uuid_renamed, '/home/app/xt.json')
+    client.fput_object(os.environ['bucket_name'], 'yt-'+uuid_renamed, '/home/app/yt.json')
 
-    return 1
+    return os.environ['bucket_name']
 
 def buildTrain(data, past_day=24, futureDay=1):
         #全域變數   

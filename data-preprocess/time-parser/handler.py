@@ -4,6 +4,8 @@ import json
 from datetime import datetime, timedelta
 from minio.error import S3Error
 import os
+import json
+
 def handle(req):
 
     client = Minio(
@@ -13,10 +15,21 @@ def handle(req):
         secure = False
     )
 
-    try:
-        client.fget_object('test01', 'test.csv', '/home/app/test.csv')
-    except ResponseError as err:
-        print(err)
+    data = json.loads(req)
+    fname = data['fname']
+    file_uuid = data['file_uuid']
+    last_pipeline_bucket_name = data['bucket_name']
+    pipeline = data['pipeline']
+    function_name = data['function_name']
+    last_pipeline_file_name = data['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
+    uuid_renamed = function_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
+    # loaddata_renamed_file_path = '/home/app/'+uuid_renamed
+
+
+    # try:
+    client.fget_object(last_pipeline_bucket_name, last_pipeline_file_name, '/home/app/test.csv')
+    # except S3Error as err:
+    #     print(err)
 
     data = pd.read_csv("/home/app/test.csv").copy()
     
@@ -37,12 +50,12 @@ def handle(req):
     found = client.bucket_exists(os.environ['bucket_name'])
     if not found:
         client.make_bucket(os.environ['bucket_name'])
-    else:
-        print(f"""Bucket {os.environ['bucket_name']} already exists""")
+    # else:
+    #     print(f"""Bucket {os.environ['bucket_name']} already exists""")
 
-    try:
-        client.fput_object(os.environ['bucket_name'], 'time-parser.csv', '/home/app/parser-test.csv')
-    except S3Error as exc:
-        print("error occurred.", exc)
+    # try:
+    client.fput_object(os.environ['bucket_name'], uuid_renamed, '/home/app/parser-test.csv')
+    # except S3Error as exc:
+    #     print("error occurred.", exc)
 
-    return 1
+    return os.environ['bucket_name']

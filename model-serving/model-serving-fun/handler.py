@@ -10,7 +10,8 @@ from keras.layers.normalization import BatchNormalization
 from keras.optimizers import Adam
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 import tensorflow as tf
-import os
+from pandas.core.common import SettingWithCopyWarning
+import warnings
 
 def handle(req):
     target_field = 'Temp'
@@ -21,35 +22,43 @@ def handle(req):
         secret_key="secretsecret",
         secure = False
     )
+    warnings.simplefilter(action="ignore", category=SettingWithCopyWarning)
+
+    data = json.loads(req)
+    fname = data['fname']
+    file_uuid = data['file_uuid']
+    last_pipeline_bucket_name = data['bucket_name']
+    pipeline = data['pipeline']
+    function_name = data['function_name']
+    last_pipeline_file_name = data['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
+    uuid_renamed = 'lstm-pipeline-data-clean' + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
+    uuid_renamed_json = data['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'json'
+    uuid_renamed_h5 = data['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'h5'
+    uuid_renamed_file = data['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
 
     basic_basth = '/home/app'
     file_name = req 
     file_path = os.path.join(basic_basth, req)
 
-    try:
-        client.fget_object('model-lstm', 'model-lstm.h5', '/home/app/model-lstm.h5')
-        client.fget_object('user-upload-file', req, file_path)
-    except ResponseError as err:
-        print(err)
+
+    client.fget_object(last_pipeline_file_name, uuid_renamed_h5, '/home/app/model-lstm.h5')
+    client.fget_object('lstm-pipeline-data-clean', uuid_renamed, file_path)
 
     data = pd.read_csv(file_path)
     model = modelLoad(model_name='/home/app/model-lstm.h5')
     data = newField(data, target_field=target_field)
     data_ok = correction(data=data, past_day=24, direction=direction, model=model, target_field=target_field)
-    data_ok.to_csv('/home/app/complete-data2.csv')
+    data_ok.to_csv('/home/app/complete-data.csv')
     
     found = client.bucket_exists(os.environ['bucket_name'])
     if not found:
         client.make_bucket(os.environ['bucket_name'])
-    else:
-        print(f"""Bucket {os.environ['bucket_name']} already exists""")
 
-    try:
-        client.fput_object(os.environ['bucket_name'], 'complete-data.csv', '/home/app/complete-data2.csv')
-    except S3Error as exc:
-        print("error occurred.", exc)
 
-    return 1
+    client.fput_object(os.environ['bucket_name'], uuid_renamed_file, '/home/app/complete-data.csv')
+
+
+    return os.environ['bucket_name']
 
 def modelLoad(model_name):
     model = tf.keras.models.load_model(model_name, compile = False)

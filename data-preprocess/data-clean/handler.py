@@ -5,6 +5,10 @@ from datetime import datetime, timedelta
 import pika
 from minio.error import S3Error
 import os
+import json
+import warnings
+from pandas.core.common import SettingWithCopyWarning
+
 def handle(req):
 
     client = Minio(
@@ -13,7 +17,7 @@ def handle(req):
         secret_key="secretsecret",
         secure = False
     )
-
+    warnings.simplefilter(action="ignore", category=SettingWithCopyWarning)
     credentials = pika.PlainCredentials('user', 'user')
 
     connection = pika.BlockingConnection(pika.ConnectionParameters('10.20.1.54', '30672', '/', credentials))
@@ -22,10 +26,20 @@ def handle(req):
 
     channel.queue_declare(queue='hello')
 
-    try:
-        client.fget_object('time-parser', 'time-parser.csv', '/home/app/time-parser.csv')
-    except S3Error as err:
-        print(err)
+    data = json.loads(req)
+    fname = data['fname']
+    file_uuid = data['file_uuid']
+    last_pipeline_bucket_name = data['bucket_name']
+    
+    pipeline = data['pipeline']
+    function_name = data['function_name']
+    last_pipeline_file_name = data['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
+    uuid_renamed = function_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
+
+    # try:
+    client.fget_object(last_pipeline_bucket_name, last_pipeline_file_name, '/home/app/time-parser.csv')
+    # except S3Error as err:
+    #     print(err)
 
     data = pd.read_csv("/home/app/time-parser.csv").copy()
 
@@ -49,15 +63,15 @@ def handle(req):
     found = client.bucket_exists(os.environ['bucket_name'])
     if not found:
         client.make_bucket(os.environ['bucket_name'])
-    else:
-        print(f"""Bucket {os.environ['bucket_name']} already exists""")
+    # else:
+    #     print(f"""Bucket {os.environ['bucket_name']} already exists""")
 
-    try:
-        client.fput_object(os.environ['bucket_name'], 'data-clean.csv', '/home/app/data-clean.csv')
-    except S3Error as exc:
-        print("error occurred.", exc)
+    # try:
+    client.fput_object(os.environ['bucket_name'], uuid_renamed, '/home/app/data-clean.csv')
+    # except S3Error as exc:
+    #     print("error occurred.", exc)
 
-    return 1
+    return os.environ['bucket_name']
 
 
 def anomalyDetection(data, method = 'chebyshev', value_maximun = 40, value_minimun = 0):

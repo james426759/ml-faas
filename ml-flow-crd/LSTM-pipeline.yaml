@@ -9,6 +9,8 @@ spec:
       name: data-preprocess
       rule: ['dev', 'user']
       step:
+      - name: load-data
+        mlfun: james759426/load-data:0.0.1
       - name: time-parser
         mlfun: james759426/time-parser:0.0.1
       - name: data-clean

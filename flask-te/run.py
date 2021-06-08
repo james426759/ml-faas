@@ -7,20 +7,26 @@ import requests
 import kubernetes
 import yaml
 from pprint import pprint
+import json
+import uuid
 
 app = Flask(__name__)
 CORS(app)
 
 UPLOAD_FOLDER = 'user-uploaded-file'
 DEV_UPLOAD_FOLDER = 'dev-upload-file'
+DEV_PIPELINE_LIST = ['lstm-pipeline-time-parser', 'lstm-pipeline-data-clean', 'lstm-pipeline-train-data-build', 
+    'lstm-pipeline-train-model-build', 'lstm-pipeline-train-model', 'lstm-pipeline-model-serving-fun']
+USER_PIPELINE_LIST = ['lstm-pipeline-time-parser', 'lstm-pipeline-data-clean', 'lstm-pipeline-model-serving-fun']
+
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['DEV_UPLOAD_FOLDER'] = DEV_UPLOAD_FOLDER
 basedir = os.path.abspath(os.path.dirname(__file__))
 file_dir = os.path.join(basedir, app.config['UPLOAD_FOLDER'])
 
-# User上傳資料
-@app.route('/user/upload', methods=['POST'], strict_slashes=False)
-def api_upload():
+# User upload, get complete data download url, output:{"status_code": int, "url": str}
+@app.route('/user/upload/<string:pipeline>/<string:model_name>', methods=['POST'], strict_slashes=False)
+def api_upload(pipeline,model_name):
 
     file_dir = os.path.join(basedir, app.config['UPLOAD_FOLDER'])
     if not os.path.exists(file_dir):
@@ -33,87 +39,161 @@ def api_upload():
         secure=False
     )
 
+    kubernetes.config.load_kube_config()
+    api_instance = kubernetes.client.CustomObjectsApi()
+    api_response = api_instance.get_namespaced_custom_object(group='kopf.dev', version='v1', plural='mlflows', name=pipeline, namespace='ml-faas')
+
+    ################################################################################
+    # 利用kubernetes api抓取所需之function name (尚未完成)
+    # kubernetes.config.load_kube_config()
+    # api_instance = kubernetes.client.CustomObjectsApi()
+    # api_response = api_instance.get_namespaced_custom_object(group='kopf.dev', version='v1', plural='mlflows', name=pipeline, namespace='ml-faas')
+    ################################################################################
+
     f = request.files['file']
     if f:
         fname = f.filename
         f.save(os.path.join(file_dir, fname))
 
+        found = client.bucket_exists(UPLOAD_FOLDER)
+        if not found:
+            client.make_bucket(UPLOAD_FOLDER)
+
         try:
-            client.fput_object('user-upload-file', fname,
+            client.fput_object(UPLOAD_FOLDER, fname,
                                os.path.join(file_dir, fname))
+            
+            ### load-data function (create load-function bucket)
+            ###################################################
+            # file_uuid = str(uuid.uuid4())
+
+            # uuid_renamed = fname.split('.')[0]+'-'+file_uuid+'.'+fname.split('.')[1]
+            # loaddata_renamed_file_path = '/home/app/'+uuid_renamed
+            # client.fget_object('user-upload-file', fname, loaddata_renamed_file_path)
+
+            # found = client.bucket_exists('lstm-pipeline-load-data')
+            # if not found:
+            #     client.make_bucket('lstm-pipeline-load-data')
+            # else:
+            #     print("Bucket lstm-pipeline-load-data already exists")
+            # client.fput_object('lstm-pipeline-load-data', uuid_renamed, loaddata_renamed_file_path)
+            ###################################################
+
         except S3Error as err:
             print(err)
 
-        r = requests.post(
-            'http://10.20.1.54:31112/function/model-serving', data=fname)
+        USER_PIPELINE_LIST = []
+        stage_list = api_response['status']['create_fn']['api_list']
+        for i in stage_list:
+            if 'user' in stage_list[i]['rule']:
+                for j in stage_list[i]['step']:
+                    USER_PIPELINE_LIST.append(j)
 
-        if r == 200:
-            url = client.presigned_get_object("complete-data", "complete-data.csv")
-        else:
-            return jsonify({"errno": r, "errmsg": "產生下載url失敗!"})
+        # for i in api_response['status']['create_fn']['api_list']['stage1']:
+        #     USER_PIPELINE_LIST.append(i)
+        # model serving 未改
+        # for i in api_response['status']['create_fn']['api_list']['stage3']:
+        #     USER_PIPELINE_LIST.append(i)
 
-        return jsonify({"errno": 0, "errmsg": "上傳成功"})
-    else:
-        return jsonify({"errno": 1001, "errmsg": "上傳失败"})
+        file_uuid = str(uuid.uuid4())
+        bucket_name = UPLOAD_FOLDER
 
-# Dev上傳資料
-@app.route("/dev/upload", methods=['POST'], strict_slashes=False)
-def dev_upload_file():
-
-    # file_dir = os.path.join(basedir, app.config['DEV_UPLOAD_FOLDER'])
-    file_dir = os.path.join(basedir, app.config['UPLOAD_FOLDER'])
-    if not os.path.exists(file_dir):
-        os.makedirs(file_dir)
-
-    client = Minio(
-        "10.20.1.54:30020",
-        access_key="admin",
-        secret_key="secretsecret",
-        secure=False
-    )
-
-    f = request.files['file']
-
-    if f:
-        fname = f.filename
-        f.save(os.path.join(file_dir, fname))
-
-        try:
-            client.fput_object('user-upload-file', fname,
-                               os.path.join(file_dir, fname))
-        except S3Error as err:
-            print(err)
-
-    # if f:
-    #     fname = f.filename
-    #     f.save(os.path.join(file_dir, fname))
-
-    #     try:
-    #         client.fput_object('dev-upload-file', fname,
-    #                            os.path.join(file_dir, fname))
-    #     except S3Error as err:
-    #         print(err)
-
-        kubernetes.config.load_kube_config()
-        api_instance = kubernetes.client.CustomObjectsApi()
-        api_response = api_instance.get_namespaced_custom_object(group='kopf.dev', version='v1', plural='mlflows', name='lstm-pipeline', namespace='ml-faas')
-
-        data = api_response['status']['create_fn']['api_list']
-        for i in data:
-
-            if i == 'lstm-pipeline-model-serving-fun':
-                r = requests.post(f"""http://10.20.1.54:31112/function/{i}""", data=fname)
-            else:
-                r = requests.get(f"""http://10.20.1.54:31112/function/{i}""")
+        #### model serving未完成 ####
+        for i in USER_PIPELINE_LIST[0:3]:
+            data = {'fname':fname, 'file_uuid':file_uuid, 'bucket_name':bucket_name, 'pipeline':pipeline, 'function_name':i}
+            print(data)
+            r = requests.post(f"""http://10.20.1.54:31112/function/{i}""", json=data)
+            bucket_name = r.text
+            bucket_name = bucket_name.replace('\n', '').replace('\r', '')
+            # print(r.json())
             if r.status_code == 200:
+                res = requests.post(f"""http://admin:admin@10.20.1.54:31112/system/scale-function/{i}""", json={"replicas": 0})
                 continue
             else:
-                return (f"""Function {i} status code: {r.status_code}""")
-                
-    url = client.presigned_get_object("complete-data", "complete-data.csv")
-    
-    return jsonify({"status_code": r.status_code, "url": url})
+                return jsonify({'Function':i,'status_code':r.status_code, 'text':r.text})
+        
+        return jsonify({"status_code": r.status_code})
 
+        #### model serving未完成 ####
+        # if r.status_code == 200:
+        #     url = client.presigned_get_object("complete-data", "complete-data.csv")
+        #     return jsonify({"status_code": r.status_code, "url": url})
+        # else:
+        #     return jsonify({"status_code": r.status_code, "errmsg": "產生下載url失敗!"})
+    else:
+        return jsonify({"errno": 111, "errmsg": "上傳"})
+
+# Dev upload, get complete data download url, output:{"status_code": int, "url": str}
+@app.route("/dev/upload/<string:pipeline>/<string:model_name>", methods=['POST'], strict_slashes=False)
+def dev_upload_file(pipeline, model_name=''):
+
+    file_dir = os.path.join(basedir, app.config['DEV_UPLOAD_FOLDER'])
+    if not os.path.exists(file_dir):
+        os.makedirs(file_dir)
+
+    client = Minio(
+        "10.20.1.54:30020",
+        access_key="admin",
+        secret_key="secretsecret",
+        secure=False
+    )
+
+    kubernetes.config.load_kube_config()
+    api_instance = kubernetes.client.CustomObjectsApi()
+    api_response = api_instance.get_namespaced_custom_object(group='kopf.dev', version='v1', plural='mlflows', name=pipeline, namespace='ml-faas')
+
+    f = request.files['file']
+    if f:
+        fname = f.filename
+        f.save(os.path.join(file_dir, fname))
+
+        found = client.bucket_exists(DEV_UPLOAD_FOLDER)
+        if not found:
+            client.make_bucket(DEV_UPLOAD_FOLDER)
+
+        try:
+            client.fput_object(DEV_UPLOAD_FOLDER, fname,
+                               os.path.join(file_dir, fname))
+        except S3Error as err:
+            print(err)
+
+
+        DEV_PIPELINE_LIST = []
+        stage_list = api_response['status']['create_fn']['api_list']
+        for i in stage_list:
+            if 'dev' in stage_list[i]['rule']:
+                for j in stage_list[i]['step']:
+                    DEV_PIPELINE_LIST.append(j)
+
+        file_uuid = str(uuid.uuid4())
+        bucket_name = DEV_UPLOAD_FOLDER
+
+        # DEV_PIPELINE_LIST = ['lstm-pipeline-load-data', 'lstm-pipeline-time-parser', 'lstm-pipeline-data-clean']
+        for i in DEV_PIPELINE_LIST:
+            data = {'fname':fname, 'file_uuid':file_uuid, 'bucket_name':bucket_name, 'pipeline':pipeline, 'function_name':i}
+            print(data)
+            r = requests.post(f"""http://10.20.1.54:31112/function/{i}""", json=data)
+            bucket_name = r.text
+            bucket_name = bucket_name.replace('\n', '').replace('\r', '')
+            # # print(r.json())
+            if r.status_code == 200:
+                res = requests.post(f"""http://admin:admin@10.20.1.54:31112/system/scale-function/{i}""", json={"replicas": 0})
+                continue
+            else:
+                return jsonify({'Function':i,'status_code':r.status_code, 'text':r.text})
+
+        if r.status_code == 200:
+            uuid_renamed = function_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
+            url = client.presigned_get_object(bucket_name, uuid_renamed)
+            return jsonify({"status_code": r.status_code, "url": url})
+        else:
+            return jsonify({"status_code": r.status_code, "errmsg": "產生下載url失敗!"})
+
+        # return jsonify({'status_code':r.status_code, 'text':r.text})
+    return '1'
+    # return jsonify({'Function':i,'status_code':r.status_code, 'text':r.text})
+
+# Get pipeline list, output:{"mlpipline_list":[]}
 @app.route("/api/list_ml_pipeline", strict_slashes=False)
 def list_mlpipline():
 
@@ -127,7 +207,72 @@ def list_mlpipline():
         mlpipline_list.append(i['metadata']['name'])
     
     return jsonify({"mlpipline_list": mlpipline_list})
-        
+
+# Get model list, output:{'model_list':[]}
+@app.route("/api/list_ml_pipeline_models/<string:pipeline>", strict_slashes=False)
+def list_ml_pipeline_models(pipeline):
+
+    client = Minio(
+        "10.20.1.54:30020",
+        access_key="admin",
+        secret_key="secretsecret",
+        secure=False
+    )
+    
+    kubernetes.config.load_kube_config()
+    api_instance = kubernetes.client.CustomObjectsApi()
+    api_response = api_instance.get_namespaced_custom_object(group='kopf.dev', version='v1', plural='mlflows', name=pipeline, namespace='ml-faas')
+
+    model_bucket = pipeline + '-' + api_response['status']['create_fn']['api_list']['stage2'][2]
+    
+    object_list = client.list_objects(model_bucket,recursive=True)
+
+    model_list = []
+    for i in object_list:
+        model_list.append(i.object_name)
+
+    return jsonify({'model_list':model_list})
+
+@app.route("/test/<string:pipeline>/<string:model_name>", methods=['POST'], strict_slashes=False)
+def test(pipeline, model_name):
+
+    client = Minio(
+        "10.20.1.54:30020",
+        access_key="admin",
+        secret_key="secretsecret",
+        secure=False
+    )
+    
+    kubernetes.config.load_kube_config()
+    api_instance = kubernetes.client.CustomObjectsApi()
+    api_response = api_instance.get_namespaced_custom_object(group='kopf.dev', version='v1', plural='mlflows', name=pipeline, namespace='ml-faas')
+
+    USER_PIPELINE_LIST = []
+    for i in api_response['status']['create_fn']['api_list']['stage1']:
+        USER_PIPELINE_LIST.append(i)
+    print(USER_PIPELINE_LIST)
+    # model_bucket = pipeline + '-' + api_response['status']['create_fn']['api_list']['stage2'][2]
+    # aaa = []
+
+    # for i in api_response['status']['create_fn']['api_list']['stage1']:
+    #     aaa.append(i)
+    # for i in api_response['status']['create_fn']['api_list']['stage3']:
+    #     aaa.append(i)
+    # aaa = api_response['status']['create_fn']['api_list']['stage1'].append(api_response['status']['create_fn']['api_list']['stage3'])
+    # print(api_response['status']['create_fn']['api_list'])
+
+    # print(aaa)
+    # fname = '111.csv'
+    # file_uuid = '222'
+    # bucket_name = '333'
+    # data = {'fname':fname, 'file_uuid':file_uuid, 'bucket_name':bucket_name}
+    # r = requests.post('http://10.20.1.54:31112/function/lstm-pipeline1-load-data', json=data)
+    # bucket_name = r.text
+    # c = bucket_name.replace('\n', '').replace('\r', '')
+    # client.fget_object(c, 'aaa.txt', '/home/app/aaa.txt')
+    # client.make_bucket(r.text)
+
+    return jsonify({'ppp':pipeline})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=30089, debug=True)

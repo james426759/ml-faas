@@ -19,11 +19,20 @@ def handle(req):
         secure = False
     )
 
-    try:
-        client.fget_object('train-dataset', 'xt.json', '/home/app/xt.json')
-        client.fget_object('train-dataset', 'yt.json', '/home/app/yt.json')
-    except ResponseError as err:
-        print(err)
+    data = json.loads(req)
+    fname = data['fname']
+    file_uuid = data['file_uuid']
+    last_pipeline_bucket_name = data['bucket_name']
+    pipeline = data['pipeline']
+    function_name = data['function_name']
+    last_pipeline_file_name = data['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
+    uuid_renamed_json = data['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'json'
+    uuid_renamed_h5 = data['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'h5'
+
+    
+    client.fget_object(last_pipeline_bucket_name, 'xt-'+uuid_renamed_json, '/home/app/xt.json')
+    client.fget_object(last_pipeline_bucket_name, 'yt-'+uuid_renamed_json, '/home/app/yt.json')
+
 
     x_dict = ""
     with open('/home/app/xt.json', 'r') as obj:
@@ -74,17 +83,13 @@ def handle(req):
     found = client.bucket_exists(os.environ['bucket_name'])
     if not found:
         client.make_bucket(os.environ['bucket_name'])
-    else:
-        print(f"""Bucket {os.environ['bucket_name']} already exists""")
 
-    try:
+
         # client.fput_object('train-model-setup', 'x_train_data.json', '/home/app/x_train_data.json')
         # client.fput_object('train-model-setup', 'y_train_data.json', '/home/app/y_train_data.json')
-        client.fput_object(os.environ['bucket_name'], 'model_setup.h5', '/home/app/model_setup.h5')
-    except S3Error as exc:
-        print("error occurred.", exc)
+    client.fput_object(os.environ['bucket_name'], uuid_renamed_h5, '/home/app/model_setup.h5')
 
-    return 1
+    return os.environ['bucket_name']
 
 def buildModel(x_train, y_train):
     model = Sequential()

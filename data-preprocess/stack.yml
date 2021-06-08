@@ -3,10 +3,10 @@ provider:
   name: openfaas
   gateway: http://10.20.1.54:31112
 functions:
-#   load-data:
-#     lang: python3
-#     handler: ./load-data
-#     image: james759426/load-data-524:0.0.1
+  load-data:
+    lang: python3
+    handler: ./load-data
+    image: james759426/load-data:0.0.1
 
   time-parser:
     lang: python3

@@ -1,0 +1,12 @@
+apiVersion: kopf.dev/v1
+kind: MLFlow
+metadata:
+  name: lstm-pipeline1
+  namespace: ml-faas
+spec:
+  pipeline:
+    stage1:
+      name: data-preprocess
+      step:
+      - name: load-data
+        mlfun: james759426/load-data:0.0.1
