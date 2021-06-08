@@ -7,6 +7,7 @@ spec:
   pipeline:
     stage1:
       name: data-preprocess
+      rule: ['dev', 'user']
       step:
       - name: time-parser
         mlfun: james759426/time-parser:0.0.1
@@ -14,6 +15,7 @@ spec:
         mlfun: james759426/data-clean:0.0.1
     stage2:
       name: LSTM-model-build
+      rule: ['dev']
       step:
       - name: train-data-build
         mlfun: james759426/train-data-build:0.0.1
@@ -23,6 +25,7 @@ spec:
         mlfun: james759426/train-model:0.0.1
     stage3:
       name: model-serving
+      rule: ['dev', 'user']
       step:
       - name: model-serving-fun
         mlfun: james759426/model-serving-fun:0.0.1

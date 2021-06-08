@@ -8,7 +8,7 @@ def create_fn(spec, name, namespace, logger, **kwargs):
     ml_pipelines = spec['pipeline']
     for key, stage in ml_pipelines.items():
         steps = stage['step']
-        fun_flow[key] = []
+        fun_flow[key] = {'rule': stage['rule'], 'step': []}
         for data in range(len(steps)):
             ml_Fun = f"""apiVersion: openfaas.com/v1
 kind: Function
@@ -26,7 +26,8 @@ spec:
     exec_timeout: "21600s"
     bucket_name: {name}-{steps[data]['name']}
 """
-            fun_flow[key].append(steps[data]['name'])
+            fun_name = f"""{name}-{steps[data]['name']}"""
+            fun_flow[key]['step'].append(fun_name)
             os.system(f"cat <<EOF | kubectl apply -f - \n{ml_Fun}\n")
     return {'api_list': fun_flow}
 
