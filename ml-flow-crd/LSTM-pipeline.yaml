@@ -22,9 +22,9 @@ spec:
       - name: train-data-build
         mlfun: james759426/train-data-build:0.0.1
       - name: train-model-build
-        mlfun: james759426/train-model-build:0.0.1
+        mlfun: james759426/train-model-build-flask:0.0.1
       - name: train-model
-        mlfun: james759426/train-model:0.0.1
+        mlfun: james759426/train-model-flask:0.0.1
     stage3:
       name: model-serving
       rule: ['dev', 'user']

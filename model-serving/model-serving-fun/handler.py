@@ -12,6 +12,7 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint
 import tensorflow as tf
 from pandas.core.common import SettingWithCopyWarning
 import warnings
+import json
 
 def handle(req):
     target_field = 'Temp'
@@ -33,15 +34,15 @@ def handle(req):
     last_pipeline_file_name = data['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
     uuid_renamed = 'lstm-pipeline-data-clean' + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
     uuid_renamed_json = data['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'json'
-    uuid_renamed_h5 = data['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'h5'
-    uuid_renamed_file = data['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
+    uuid_renamed_h5 = last_pipeline_bucket_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'h5'
+    uuid_renamed_file = os.environ['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
 
     basic_basth = '/home/app'
     file_name = req 
     file_path = os.path.join(basic_basth, req)
 
 
-    client.fget_object(last_pipeline_file_name, uuid_renamed_h5, '/home/app/model-lstm.h5')
+    client.fget_object(last_pipeline_bucket_name, uuid_renamed_h5, '/home/app/model-lstm.h5')
     client.fget_object('lstm-pipeline-data-clean', uuid_renamed, file_path)
 
     data = pd.read_csv(file_path)
