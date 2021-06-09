@@ -180,17 +180,24 @@ def dev_upload_file(pipeline, model_name=''):
                 res = requests.post(f"""http://admin:admin@10.20.1.54:31112/system/scale-function/{i}""", json={"replicas": 0})
                 continue
             else:
-                return jsonify({'Function':i,'status_code':r.status_code, 'text':r.text})
+                print({'Function':i,'status_code':r.status_code})
+                return 'r.status_code'
 
         if r.status_code == 200:
-            uuid_renamed = function_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
-            url = client.presigned_get_object(bucket_name, uuid_renamed)
-            return jsonify({"status_code": r.status_code, "url": url})
+            uuid_renamed = i + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
+            url = client.presigned_get_object('lstm-pipeline-model-serving-fun', uuid_renamed)
+            
+            return json.dumps({'url':url})
         else:
-            return jsonify({"status_code": r.status_code, "errmsg": "產生下載url失敗!"})
+            return 'no url'
+        # if r.status_code == 200:
+        #     uuid_renamed = function_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
+        #     url = client.presigned_get_object(bucket_name, uuid_renamed)
+        #     return jsonify({"status_code": r.status_code, "url": url})
+        # else:
+        #     return jsonify({"status_code": r.status_code, "errmsg": "產生下載url失敗!"})
 
         # return jsonify({'status_code':r.status_code, 'text':r.text})
-    return '1'
     # return jsonify({'Function':i,'status_code':r.status_code, 'text':r.text})
 
 # Get pipeline list, output:{"mlpipline_list":[]}
@@ -233,46 +240,24 @@ def list_ml_pipeline_models(pipeline):
 
     return jsonify({'model_list':model_list})
 
-@app.route("/test/<string:pipeline>/<string:model_name>", methods=['POST'], strict_slashes=False)
-def test(pipeline, model_name):
+@app.route("/test/", methods=['POST'], strict_slashes=False)
+def test():
 
-    client = Minio(
-        "10.20.1.54:30020",
-        access_key="admin",
-        secret_key="secretsecret",
-        secure=False
-    )
+    # client = Minio(
+    #     "10.20.1.54:30020",
+    #     access_key="admin",
+    #     secret_key="secretsecret",
+    #     secure=False
+    # )
     
-    kubernetes.config.load_kube_config()
-    api_instance = kubernetes.client.CustomObjectsApi()
-    api_response = api_instance.get_namespaced_custom_object(group='kopf.dev', version='v1', plural='mlflows', name=pipeline, namespace='ml-faas')
+    # kubernetes.config.load_kube_config()
+    # api_instance = kubernetes.client.CustomObjectsApi()
+    # api_response = api_instance.get_namespaced_custom_object(group='kopf.dev', version='v1', plural='mlflows', name=pipeline, namespace='ml-faas')
+    function_name = 'lstm-pipeline-train-model-build'
+    data = {'fname': 'test.csv', 'file_uuid': '61acf91a-e5a6-41bd-a2cc-8582dd0cd942', 'bucket_name': 'lstm-pipeline-train-data-build', 'pipeline': 'lstm-pipeline', 'function_name': 'lstm-pipeline-train-model-build'}
+    r = requests.post(f"""http://10.20.1.54:31112/function/{function_name}""", json=data)
 
-    USER_PIPELINE_LIST = []
-    for i in api_response['status']['create_fn']['api_list']['stage1']:
-        USER_PIPELINE_LIST.append(i)
-    print(USER_PIPELINE_LIST)
-    # model_bucket = pipeline + '-' + api_response['status']['create_fn']['api_list']['stage2'][2]
-    # aaa = []
-
-    # for i in api_response['status']['create_fn']['api_list']['stage1']:
-    #     aaa.append(i)
-    # for i in api_response['status']['create_fn']['api_list']['stage3']:
-    #     aaa.append(i)
-    # aaa = api_response['status']['create_fn']['api_list']['stage1'].append(api_response['status']['create_fn']['api_list']['stage3'])
-    # print(api_response['status']['create_fn']['api_list'])
-
-    # print(aaa)
-    # fname = '111.csv'
-    # file_uuid = '222'
-    # bucket_name = '333'
-    # data = {'fname':fname, 'file_uuid':file_uuid, 'bucket_name':bucket_name}
-    # r = requests.post('http://10.20.1.54:31112/function/lstm-pipeline1-load-data', json=data)
-    # bucket_name = r.text
-    # c = bucket_name.replace('\n', '').replace('\r', '')
-    # client.fget_object(c, 'aaa.txt', '/home/app/aaa.txt')
-    # client.make_bucket(r.text)
-
-    return jsonify({'ppp':pipeline})
+    return jsonify({'Function':function_name,'status_code':r.status_code, 'text':r.text})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=30089, debug=True)
