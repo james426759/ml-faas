@@ -21,14 +21,16 @@ def handle(req):
     data = json.loads(req)
     fname = data['fname']
     file_uuid = data['file_uuid']
-    last_pipeline_bucket_name = data['bucket_name']
     pipeline = data['pipeline']
     function_name = data['function_name']
-    last_pipeline_file_name = data['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
-    uuid_renamed = function_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'json'
 
+    function_bucket_list = data['function_bucket']
+
+    data_clean_func_bucket_name = function_bucket_list['lstm-pipeline-data-clean']
+    data_clean_func_file_name = data_clean_func_bucket_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
+    uuid_renamed_file_json = function_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'json'
     
-    client.fget_object(last_pipeline_bucket_name, last_pipeline_file_name, '/home/app/data-clean.csv')
+    client.fget_object(data_clean_func_bucket_name, data_clean_func_file_name, '/home/app/data-clean.csv')
 
 
     data = pd.read_csv("/home/app/data-clean.csv").copy()
@@ -64,8 +66,8 @@ def handle(req):
         client.make_bucket(os.environ['bucket_name'])
 
     
-    client.fput_object(os.environ['bucket_name'], 'xt-'+uuid_renamed, '/home/app/xt.json')
-    client.fput_object(os.environ['bucket_name'], 'yt-'+uuid_renamed, '/home/app/yt.json')
+    client.fput_object(os.environ['bucket_name'], 'xt-'+uuid_renamed_file_json, '/home/app/xt.json')
+    client.fput_object(os.environ['bucket_name'], 'yt-'+uuid_renamed_file_json, '/home/app/yt.json')
 
     return os.environ['bucket_name']
 

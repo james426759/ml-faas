@@ -18,20 +18,22 @@ def handle(req):
         secret_key="secretsecret",
         secure = False
     )
-
+    
     data = json.loads(req)
     fname = data['fname']
     file_uuid = data['file_uuid']
-    last_pipeline_bucket_name = data['bucket_name']
     pipeline = data['pipeline']
     function_name = data['function_name']
-    last_pipeline_file_name = data['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
-    uuid_renamed_json = data['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'json'
-    uuid_renamed_h5 = data['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'h5'
 
-    
-    client.fget_object(last_pipeline_bucket_name, 'xt-'+uuid_renamed_json, '/home/app/xt.json')
-    client.fget_object(last_pipeline_bucket_name, 'yt-'+uuid_renamed_json, '/home/app/yt.json')
+    function_bucket_list = data['function_bucket']
+
+    train_data_build_func_bucket_name = function_bucket_list['lstm-pipeline-train-data-build']
+    train_data_build_func_file_name = train_data_build_func_bucket_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'json'
+
+    uuid_renamed_file_h5 = function_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'h5'
+
+    client.fget_object(train_data_build_func_bucket_name, 'xt-'+train_data_build_func_file_name, '/home/app/xt.json')
+    client.fget_object(train_data_build_func_bucket_name, 'yt-'+train_data_build_func_file_name, '/home/app/yt.json')
 
 
     x_dict = ""
@@ -84,16 +86,13 @@ def handle(req):
     if not found:
         client.make_bucket(os.environ['bucket_name'])
 
-
-        # client.fput_object('train-model-setup', 'x_train_data.json', '/home/app/x_train_data.json')
-        # client.fput_object('train-model-setup', 'y_train_data.json', '/home/app/y_train_data.json')
-    client.fput_object(os.environ['bucket_name'], uuid_renamed_h5, '/home/app/model_setup.h5')
+    client.fput_object(os.environ['bucket_name'], uuid_renamed_file_h5, '/home/app/model_setup.h5')
 
     return os.environ['bucket_name']
 
 def buildModel(x_train, y_train):
     model = Sequential()
-    print(x_train.shape)
+    # print(x_train.shape)
     model.add(LSTM(10, input_length=x_train.shape[1], input_dim=1))
     model.add(Dense(1))
     model.compile(loss="mse", optimizer="adam")

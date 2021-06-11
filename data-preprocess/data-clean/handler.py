@@ -2,7 +2,6 @@ from minio import Minio
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-import pika
 from minio.error import S3Error
 import os
 import json
@@ -18,30 +17,25 @@ def handle(req):
         secure = False
     )
     warnings.simplefilter(action="ignore", category=SettingWithCopyWarning)
-    credentials = pika.PlainCredentials('user', 'user')
-
-    connection = pika.BlockingConnection(pika.ConnectionParameters('10.20.1.54', '30672', '/', credentials))
-
-    channel = connection.channel()
-
-    channel.queue_declare(queue='hello')
 
     data = json.loads(req)
     fname = data['fname']
     file_uuid = data['file_uuid']
-    last_pipeline_bucket_name = data['bucket_name']
-    
     pipeline = data['pipeline']
     function_name = data['function_name']
-    last_pipeline_file_name = data['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
-    uuid_renamed = function_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
+
+    function_bucket_list = data['function_bucket']
+    time_parser_func_bucket_name = function_bucket_list['lstm-pipeline-time-parser']
+
+    time_parser_func_file_name = time_parser_func_bucket_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
+    uuid_renamed_file_csv = function_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
 
     # try:
-    client.fget_object(last_pipeline_bucket_name, last_pipeline_file_name, '/home/app/time-parser.csv')
+    client.fget_object(time_parser_func_bucket_name, time_parser_func_file_name, f"""/home/app/{time_parser_func_file_name}""")
     # except S3Error as err:
     #     print(err)
 
-    data = pd.read_csv("/home/app/time-parser.csv").copy()
+    data = pd.read_csv(f"""/home/app/{time_parser_func_file_name}""").copy()
 
     data = data.round(2)
 
@@ -53,23 +47,13 @@ def handle(req):
 
     data, condition = anomalyDetection(data)
 
-
-    new_condition = ','.join(str(e) for e in condition.copy())
-    channel.basic_publish(exchange='', routing_key='hello', body=new_condition)
-    connection.close()
-
-    data.to_csv("/home/app/data-clean.csv")
+    data.to_csv(f"""/home/app/{uuid_renamed_file_csv}""")
 
     found = client.bucket_exists(os.environ['bucket_name'])
     if not found:
         client.make_bucket(os.environ['bucket_name'])
-    # else:
-    #     print(f"""Bucket {os.environ['bucket_name']} already exists""")
 
-    # try:
-    client.fput_object(os.environ['bucket_name'], uuid_renamed, '/home/app/data-clean.csv')
-    # except S3Error as exc:
-    #     print("error occurred.", exc)
+    client.fput_object(os.environ['bucket_name'], uuid_renamed_file_csv, f"""/home/app/{uuid_renamed_file_csv}""")
 
     return os.environ['bucket_name']
 

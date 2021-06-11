@@ -22,17 +22,21 @@ def handle(req):
     data = json.loads(req)
     fname = data['fname']
     file_uuid = data['file_uuid']
-    last_pipeline_bucket_name = data['bucket_name']
     pipeline = data['pipeline']
     function_name = data['function_name']
-    last_pipeline_file_name = data['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
-    uuid_renamed = data['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
-    uuid_renamed_json = data['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'json'
-    uuid_renamed_h5 = data['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'h5'
+
+    function_bucket_list = data['function_bucket']
+    train_model_build_func_bucket_name = function_bucket_list['lstm-pipeline-train-model-build']
+    train_model_build_func_file_name = train_model_build_func_bucket_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'h5'
+
+    train_data_build_func_bucket_name = function_bucket_list['lstm-pipeline-train-data-build']
+    train_data_build_func_file_name = train_data_build_func_bucket_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'json'
+
+    uuid_renamed_file_h5 = function_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'h5'
     
-    client.fget_object(last_pipeline_bucket_name, uuid_renamed_h5, '/home/app/model_setup.h5')
-    client.fget_object('lstm-pipeline-train-data-build', 'xt-'+uuid_renamed_json, '/home/app/xt.json')
-    client.fget_object('lstm-pipeline-train-data-build', 'yt-'+uuid_renamed_json, '/home/app/yt.json')
+    client.fget_object(train_model_build_func_bucket_name, train_model_build_func_file_name, '/home/app/model_setup.h5')
+    client.fget_object(train_data_build_func_bucket_name, 'xt-'+train_data_build_func_file_name, '/home/app/xt.json')
+    client.fget_object(train_data_build_func_bucket_name, 'yt-'+train_data_build_func_file_name, '/home/app/yt.json')
 
     x_dict = ""
     with open('/home/app/xt.json', 'r') as obj:
@@ -71,7 +75,7 @@ def handle(req):
         client.make_bucket(os.environ['bucket_name'])
 
 
-    client.fput_object(os.environ['bucket_name'], uuid_renamed_h5, '/home/app/model_LSTM.h5')
+    client.fput_object(os.environ['bucket_name'], uuid_renamed_file_h5, '/home/app/model_LSTM.h5')
 
 
     return os.environ['bucket_name']

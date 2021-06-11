@@ -24,14 +24,19 @@ def handle(req):
     data = json.loads(req)
     fname = data['fname']
     file_uuid = data['file_uuid']
-    last_pipeline_bucket_name = data['bucket_name']
     pipeline = data['pipeline']
     function_name = data['function_name']
-    uuid_renamed = function_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
 
+    uuid_renamed_file_csv = function_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
+
+    if data['user'] == 'dev':
+        user_upload_file_bucket = 'dev-upload-file'
+    elif data['user'] == 'user':
+        user_upload_file_bucket = 'user-uploaded-file'
+        
     # loaddata_renamed_file_path = '/home/app/'+uuid_renamed
-    client.fget_object(last_pipeline_bucket_name, fname, '/home/app/test.csv')
+    client.fget_object(user_upload_file_bucket, fname, f"""/home/app/{fname}""")
 
-    client.fput_object(os.environ['bucket_name'], uuid_renamed, '/home/app/test.csv')
+    client.fput_object(os.environ['bucket_name'], uuid_renamed_file_csv, f"""/home/app/{fname}""")
     
     return os.environ['bucket_name']

@@ -18,20 +18,18 @@ def handle(req):
     data = json.loads(req)
     fname = data['fname']
     file_uuid = data['file_uuid']
-    last_pipeline_bucket_name = data['bucket_name']
     pipeline = data['pipeline']
     function_name = data['function_name']
-    last_pipeline_file_name = data['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
-    uuid_renamed = function_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
-    # loaddata_renamed_file_path = '/home/app/'+uuid_renamed
 
+    function_bucket_list = data['function_bucket']
+    load_data_func_bucket_name = function_bucket_list['lstm-pipeline-load-data']
 
-    # try:
-    client.fget_object(last_pipeline_bucket_name, last_pipeline_file_name, '/home/app/test.csv')
-    # except S3Error as err:
-    #     print(err)
+    load_data_func_file_name = load_data_func_bucket_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
+    uuid_renamed_file_csv = function_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
 
-    data = pd.read_csv("/home/app/test.csv").copy()
+    client.fget_object(load_data_func_bucket_name, load_data_func_file_name, f"""/home/app/{load_data_func_file_name}""")
+
+    data = pd.read_csv(f"""/home/app/{load_data_func_file_name}""").copy()
     
     local_time = data['LocalTime'].copy()
     time = []           
@@ -45,17 +43,12 @@ def handle(req):
         time.append(datetime.strptime(today, '%Y-%m-%d %H:%M:%S'))
     data['LocalTime'] = pd.Series(time)
     data = data.set_index('LocalTime')
-    data.to_csv("/home/app/parser-test.csv")
+    data.to_csv(f"""/home/app/{uuid_renamed_file_csv}""")
 
     found = client.bucket_exists(os.environ['bucket_name'])
     if not found:
         client.make_bucket(os.environ['bucket_name'])
-    # else:
-    #     print(f"""Bucket {os.environ['bucket_name']} already exists""")
 
-    # try:
-    client.fput_object(os.environ['bucket_name'], uuid_renamed, '/home/app/parser-test.csv')
-    # except S3Error as exc:
-    #     print("error occurred.", exc)
+    client.fput_object(os.environ['bucket_name'], uuid_renamed_file_csv, f"""/home/app/{uuid_renamed_file_csv}""")
 
     return os.environ['bucket_name']

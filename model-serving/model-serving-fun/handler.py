@@ -28,22 +28,33 @@ def handle(req):
     data = json.loads(req)
     fname = data['fname']
     file_uuid = data['file_uuid']
-    last_pipeline_bucket_name = data['bucket_name']
     pipeline = data['pipeline']
     function_name = data['function_name']
-    last_pipeline_file_name = data['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
-    uuid_renamed = 'lstm-pipeline-data-clean' + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
-    uuid_renamed_json = data['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'json'
-    uuid_renamed_h5 = last_pipeline_bucket_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'h5'
-    uuid_renamed_file = os.environ['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
+    try:
+        selected_model = data['model']
+    except:
+        selected_model = 'null'
+
+    function_bucket_list = data['function_bucket']
+
+    train_model_func_bucket_name = function_bucket_list['lstm-pipeline-train-model']
+    if data['user'] == 'dev':
+        train_model_func_file_name = train_model_func_bucket_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'h5'
+    elif data['user'] == 'user':
+        train_model_func_file_name = selected_model
+
+    data_clean_func_bucket_name = function_bucket_list['lstm-pipeline-data-clean']
+    data_clean_func_file_name = data_clean_func_bucket_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
+
+    uuid_renamed_file_csv = function_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
 
     basic_basth = '/home/app'
-    file_name = req 
-    file_path = os.path.join(basic_basth, req)
+    # file_name = fname
+    file_path = os.path.join(basic_basth, fname)
 
 
-    client.fget_object(last_pipeline_bucket_name, uuid_renamed_h5, '/home/app/model-lstm.h5')
-    client.fget_object('lstm-pipeline-data-clean', uuid_renamed, file_path)
+    client.fget_object(train_model_func_bucket_name, train_model_func_file_name, '/home/app/model-lstm.h5')
+    client.fget_object(data_clean_func_bucket_name, data_clean_func_file_name, file_path)
 
     data = pd.read_csv(file_path)
     model = modelLoad(model_name='/home/app/model-lstm.h5')
@@ -56,7 +67,7 @@ def handle(req):
         client.make_bucket(os.environ['bucket_name'])
 
 
-    client.fput_object(os.environ['bucket_name'], uuid_renamed_file, '/home/app/complete-data.csv')
+    client.fput_object(os.environ['bucket_name'], uuid_renamed_file_csv, '/home/app/complete-data.csv')
 
 
     return os.environ['bucket_name']
