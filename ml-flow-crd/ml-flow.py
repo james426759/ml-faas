@@ -32,6 +32,27 @@ spec:
     return {'api_list': fun_flow}
 
 
-# @kopf.on.delete('kopfexamples')
-# def my_handler(spec, **_):
-#     pass
+@kopf.on.delete('mlflows')
+def delete_fn(name, meta, spec, status, **_):
+    ml_pipelines = spec['pipeline']
+    for key, stage in ml_pipelines.items():
+        steps = stage['step']
+        for data in range(len(steps)):
+            ml_Fun = f"""apiVersion: openfaas.com/v1
+kind: Function
+metadata:
+  name: {name}-{steps[data]['name']}
+  namespace: openfaas-fn
+spec:
+  name: {name}-{steps[data]['name']}
+  image: {steps[data]['mlfun']}
+  labels:
+    com.openfaas.scale.min: "0"
+  environment:
+    read_timeout: "21600s"
+    write_timeout: "21600s"
+    exec_timeout: "21600s"
+    bucket_name: {name}-{steps[data]['name']}
+"""
+            os.system(f"cat <<EOF | kubectl delete -f - \n{ml_Fun}\n")
+    return 'delete success'

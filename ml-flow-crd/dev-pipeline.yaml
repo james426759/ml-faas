@@ -1,7 +1,7 @@
 apiVersion: kopf.dev/v1
 kind: MLFlow
 metadata:
-  name: lstm-pipeline
+  name: dev-lstm-pipeline
   namespace: ml-faas
 spec:
   pipeline:
