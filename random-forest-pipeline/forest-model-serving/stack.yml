@@ -1,0 +1,13 @@
+version: 1.0
+provider:
+  name: openfaas
+  gateway: http://10.20.1.54:31112
+functions:
+  model-serving:
+    lang: python3
+    handler: ./model-serving-fun
+    image: james759426/random-forest-model-serving-fun:0.0.1
+    environment:
+      read_timeout: "21600s"
+      write_timeout: "21600s"
+      exec_timeout: "21600s"

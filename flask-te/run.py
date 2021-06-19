@@ -18,18 +18,11 @@ CORS(app)
 
 UPLOAD_FOLDER = 'user-uploaded-file'
 DEV_UPLOAD_FOLDER = 'dev-upload-file'
-DEV_PIPELINE_LIST = ['lstm-pipeline-time-parser', 'lstm-pipeline-data-clean', 'lstm-pipeline-train-data-build', 
-    'lstm-pipeline-train-model-build', 'lstm-pipeline-train-model', 'lstm-pipeline-model-serving-fun']
-USER_PIPELINE_LIST = ['lstm-pipeline-time-parser', 'lstm-pipeline-data-clean', 'lstm-pipeline-model-serving-fun']
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['DEV_UPLOAD_FOLDER'] = DEV_UPLOAD_FOLDER
 basedir = os.path.abspath(os.path.dirname(__file__))
 file_dir = os.path.join(basedir, app.config['UPLOAD_FOLDER'])
-
-# credentials = pika.PlainCredentials('user', 'user')
-# connection = pika.BlockingConnection(pika.ConnectionParameters('10.20.1.54', '30672', '/', credentials))
-# channel = connection.channel()
 
 # User upload, get complete data download url, output:{"status_code": int, "url": str}
 @app.route('/user/upload/<string:pipeline>/<string:model_bucket>/<string:model_name>', methods=['POST'], strict_slashes=False)
@@ -83,10 +76,8 @@ def api_upload(pipeline,model_bucket,model_name=''):
             r = requests.post(f"""http://10.20.1.54:31112/function/{i}""", json=data)
             if r.status_code == 200:
                 res = requests.post(f"""http://admin:admin@10.20.1.54:31112/system/scale-function/{i}""", json={"replicas": 0})
-                # print({'Function':i, 'status_code':r.status_code})
                 continue
             else:
-                # print({'Function':i, 'status_code':r.status_code, 'text':r.text})
                 return jsonify({'Function':i, 'status_code':r.status_code, 'text':r.text})
         
         if r.status_code == 200:
@@ -131,7 +122,6 @@ def dev_upload_file(pipeline):
         except S3Error as err:
             print(err)
 
-
         DEV_PIPELINE_LIST = []
         function_bucket = {}
         stage_list = api_response['status']['create_fn']['api_list']
@@ -148,14 +138,12 @@ def dev_upload_file(pipeline):
         connection = pika.BlockingConnection(pika.ConnectionParameters('10.20.1.54', '30672', '/', credentials))
         channel = connection.channel()
         
-        for i in DEV_PIPELINE_LIST[0:3]:
+        for i in DEV_PIPELINE_LIST:
             data = {'fname':fname, 'file_uuid':file_uuid, 'pipeline':pipeline, 'function_name':i, 'function_bucket':function_bucket, 'user':'dev'}
-            # print(data)
             channel.queue_declare(queue=f"""{i} is being used""")
             channel.basic_publish(exchange='', routing_key=f"""{i} is being used""", body='start')
             r = requests.post(f"""http://10.20.1.54:31112/function/{i}""", json=data)
-            
-            # # print(r.json())
+
             if r.status_code == 200:
                 channel.queue_declare(queue=f"""{i} is finsihed""")
                 channel.basic_publish(exchange='', routing_key=f"""{i} is finsihed""", body='finished')
@@ -170,12 +158,10 @@ def dev_upload_file(pipeline):
                     else:
                         break
 
-                # print(using_list)
-                # print(finish_list)
                 time.sleep(1)
-                
+
                 if len(using_list) == len(finish_list):
-                    print('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFf')
+                    print('=====================================================================')
                     res = requests.post(f"""http://admin:admin@10.20.1.54:31112/system/scale-function/{i}""", json={"replicas": 0})
                     channel.queue_delete(queue=f"""{i} is being used""")
                     channel.queue_delete(queue=f"""{i} is finsihed""")
@@ -190,7 +176,7 @@ def dev_upload_file(pipeline):
 
         if r.status_code == 200:
             uuid_renamed = i + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
-            url = client.presigned_get_object('lstm-pipeline-model-serving-fun', uuid_renamed)
+            url = client.presigned_get_object(DEV_PIPELINE_LIST[-1], uuid_renamed)
             
             return jsonify({'url':url})
         else:
@@ -236,26 +222,6 @@ def list_ml_pipeline_models(pipeline):
         model_list.append(i.object_name)
 
     return jsonify({'model_list':model_list})
-
-@app.route("/test/", methods=['POST'], strict_slashes=False)
-def test():
-
-    # client = Minio(
-    #     "10.20.1.54:30020",
-    #     access_key="admin",
-    #     secret_key="secretsecret",
-    #     secure=False
-    # )
-    
-    # kubernetes.config.load_kube_config()
-    # api_instance = kubernetes.client.CustomObjectsApi()
-    # api_response = api_instance.get_namespaced_custom_object(group='kopf.dev', version='v1', plural='mlflows', name=pipeline, namespace='ml-faas')
-    # function_name = 'lstm-pipeline-train-model-build'
-    # data = {'fname': 'test.csv', 'file_uuid': '61acf91a-e5a6-41bd-a2cc-8582dd0cd942', 'bucket_name': 'lstm-pipeline-train-data-build', 'pipeline': 'lstm-pipeline', 'function_name': 'lstm-pipeline-train-model-build'}
-    # r = requests.post(f"""http://10.20.1.54:31112/function/{function_name}""", json=data)
-
-    time.sleep(10)
-    return jsonify({'Function':'123'})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=30089, debug=True)
