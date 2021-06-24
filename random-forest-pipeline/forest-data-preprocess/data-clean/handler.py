@@ -47,13 +47,21 @@ def handle(req):
 
     data, condition = anomalyDetection(data)
 
+    condition_data = {"condition": condition}
+    with open(f"""/home/app/random-forest-condition-{file_uuid}.json""", 'w', encoding='utf-8') as f:
+        json.dump(condition_data, f)
+
     data.to_csv(f"""/home/app/{uuid_renamed_file_csv}""")
 
     found = client.bucket_exists(os.environ['bucket_name'])
+    found1 = client.bucket_exists("random-forest-condition")
     if not found:
         client.make_bucket(os.environ['bucket_name'])
+    if not found1:
+        client.make_bucket("random-forest-condition")
 
     client.fput_object(os.environ['bucket_name'], uuid_renamed_file_csv, f"""/home/app/{uuid_renamed_file_csv}""")
+    client.fput_object("random-forest-condition", f"""random-forest-condition-{file_uuid}.json""", f"""/home/app/random-forest-condition-{file_uuid}.json""")
 
     return os.environ['bucket_name']
 

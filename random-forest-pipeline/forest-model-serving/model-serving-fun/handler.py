@@ -47,11 +47,16 @@ def handle(req):
 
     client.fget_object(train_model_func_bucket_name, uuid_renamed_h5, '/home/app/model.joblib')
     client.fget_object(data_clean_func_bucket_name, data_clean_pipeline_file_name, file_path)
+    client.fget_object('random-forest-condition', f"""random-forest-condition-{file_uuid}.json""", f"""/home/app/random-forest-condition-{file_uuid}.json""")
+
+    with open(f"""/home/app/random-forest-condition-{file_uuid}.json""", 'r') as obj:
+        condition = json.load(obj)
+    condition = condition['condition']
 
     data = pd.read_csv(file_path)
     model = modelLoad(model_name='/home/app/model.joblib')
     data = newField(data, target_field=target_field)
-    data_ok = correction(data=data, past_day=24, direction=direction, model=model, target_field=target_field)
+    data_ok = correction(data=data, past_day=24, direction=direction, model=model, condition= condition, target_field=target_field)
     data_ok.to_csv('/home/app/complete-data.csv')
     
     found = client.bucket_exists(os.environ['bucket_name'])
@@ -70,7 +75,7 @@ def modelLoad(model_name):
     # model.summary()
     return model
 
-def correction(data, past_day, direction, model, target_field, correction_day = 12):
+def correction(data, past_day, direction, model, target_field, condition, correction_day = 12):
     if direction:
         mask = list(np.isnan(data[target_field]))
         for i in range(past_day+1, len(mask)):
@@ -101,6 +106,7 @@ def correction(data, past_day, direction, model, target_field, correction_day = 
                         data[target_field][data.index[i]] = y_hat[0]
                         mask[i] = False
                         data[target_field + '_m'][data.index[i]] = 'H'
+    return data
     # if direction:
     #     for times in range(int(past_day/2)):
     #         mask = list(np.isnan(data[target_field]))
