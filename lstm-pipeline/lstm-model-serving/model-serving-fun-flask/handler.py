@@ -58,11 +58,11 @@ def handle(req):
     # file_name = fname
     file_path = os.path.join(basic_basth, fname)
 
-    client.fget_object(train_model_func_bucket_name, train_model_func_file_name, f"""/home/app/{file_uuid}-{train_model_func_file_name}""")    
+    client.fget_object(train_model_func_bucket_name, train_model_func_file_name, f"""/home/app/{train_model_func_file_name}""")
     client.fget_object(data_clean_func_bucket_name, data_clean_func_file_name, f"""/home/app/{data_clean_func_file_name}""")
 
     data = pd.read_csv(f"""/home/app/{data_clean_func_file_name}""")
-    model = modelLoad(model_name=f"""/home/app/{file_uuid}-{train_model_func_file_name}""")
+    model = modelLoad(model_name=f"""/home/app/{train_model_func_file_name}""")
     data = newField(data, target_field=target_field)
     data_ok = correction(data=data, past_day=24, direction=direction, model=model, target_field=target_field)
     data_ok.to_csv(f"""/home/app/{uuid_renamed_file_csv}""")
@@ -75,7 +75,7 @@ def handle(req):
     client.fput_object(os.environ['bucket_name'], uuid_renamed_file_csv, f"""/home/app/{uuid_renamed_file_csv}""")
 
 
-    return os.environ['bucket_name']
+    return "successs"
 
 def modelLoad(model_name):
     model = tf.keras.models.load_model(model_name, compile = False)

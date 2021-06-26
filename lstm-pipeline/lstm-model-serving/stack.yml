@@ -11,3 +11,12 @@ functions:
       read_timeout: "21600s"
       write_timeout: "21600s"
       exec_timeout: "21600s"
+  
+  # model-serving-fun-flask:
+  #   lang: python3-flask
+  #   handler: ./model-serving-fun-flask
+  #   image: james759426/lstm-model-serving-fun-flask:0.0.1
+  #   environment:
+  #     read_timeout: "21600s"
+  #     write_timeout: "21600s"
+  #     exec_timeout: "21600s"

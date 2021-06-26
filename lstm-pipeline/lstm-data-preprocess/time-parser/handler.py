@@ -15,15 +15,18 @@ def handle(req):
         secure = False
     )
 
+    # 讀取所需資料req {'fname':[], 'file_uuid':[], 'pipeline':[], 'model':[](only for user upload), 'function_name':[], 'function_bucket':[], 'user':[]}
     data = json.loads(req)
     fname = data['fname']
     file_uuid = data['file_uuid']
     pipeline = data['pipeline']
     function_name = data['function_name']
 
+    # 讀取所需資料的bucket name
     function_bucket_list = data['function_bucket']
     load_data_func_bucket_name = function_bucket_list['lstm-pipeline-load-data']
 
+    # 重組出所需的資料名 {function name}-{file name}-{uuid}-{副檔名}
     load_data_func_file_name = load_data_func_bucket_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
     uuid_renamed_file_csv = function_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
 
