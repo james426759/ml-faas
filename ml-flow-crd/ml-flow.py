@@ -8,6 +8,7 @@ def create_fn(spec, name, namespace, logger, **kwargs):
     ml_pipelines = spec['pipeline']
     for key, stage in ml_pipelines.items():
         steps = stage['step']
+        deploy_node = stage['node']
         fun_flow[key] = {'rule': stage['rule'], 'step': []}
         for data in range(len(steps)):
             ml_Fun = f"""apiVersion: openfaas.com/v1
@@ -25,6 +26,8 @@ spec:
     write_timeout: "21600s"
     exec_timeout: "21600s"
     bucket_name: {name}-{steps[data]['name']}
+  constraints:
+    -  "node-use={deploy_node}"
 """
             fun_name = f"""{name}-{steps[data]['name']}"""
             fun_flow[key]['step'].append(fun_name)

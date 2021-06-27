@@ -8,6 +8,7 @@ spec:
     stage1:
       name: data-preprocess
       rule: ['dev', 'user']
+      node: training
       step:
       - name: load-data
         mlfun: james759426/lstm-load-data:0.0.1
@@ -18,6 +19,7 @@ spec:
     stage2:
       name: LSTM-model-build
       rule: ['dev']
+      node: training
       step:
       - name: train-data-build
         mlfun: james759426/lstm-train-data-build:0.0.1
@@ -28,6 +30,7 @@ spec:
     stage3:
       name: model-serving
       rule: ['dev', 'user']
+      node: serving
       step:
       - name: model-serving-fun
         mlfun: james759426/lstm-model-serving-fun:0.0.1

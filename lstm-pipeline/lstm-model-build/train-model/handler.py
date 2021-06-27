@@ -82,7 +82,7 @@ def handle(req):
 
 def train(model, x_train, y_train):
     callback = EarlyStopping(monitor="loss", patience=10, verbose=1, mode="auto")
-    model.fit(x_train, y_train, epochs=3, batch_size=128, callbacks=[callback])
+    model.fit(x_train, y_train, epochs=100, batch_size=128, callbacks=[callback])
     return model
 
 
