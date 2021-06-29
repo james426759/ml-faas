@@ -7,7 +7,13 @@ spec:
   name: nodeinfo
   handler: node main.js
   image: functions/nodeinfo:latest
-  labels:
-    com.openfaas.scale.min: "0"
-  constraints:
-    -  "node-use=serving"
+  # limits:
+  #   memory: 1000Mi
+  #   cpu: 2000m
+  # requests:
+  #   memory: 500Mi
+  #   cpu: 1000m
+  # labels:
+  #   com.openfaas.scale.min: "0"
+  # constraints: 
+  #   -  "node-use=serving"

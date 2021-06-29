@@ -28,3 +28,31 @@ print(yd)
 
 # with open('yt.json', 'w', encoding='utf-8') as f:
 #     json.dump(yd, f)
+
+b = True
+d = 123
+limits = {'memory': 123, 'cpu': 456}
+c = f"""limits:
+  {f"memory: limits['memory']" if b else ""}
+"""
+cpu: {limits['cpu']}
+
+a = f"""apiVersion: openfaas.com/v1
+kind: Function
+metadata:
+  name: lstm-pipeline-model-serving-fun
+  namespace: openfaas-fn
+spec:
+  name: lstm-pipeline-model-serving-fun
+  image: james759426/lstm-model-serving-fun:0.0.1
+  labels:
+    com.openfaas.scale.min: "0"
+  environment:
+    read_timeout: "21600s"
+    write_timeout: "21600s"
+    exec_timeout: "21600s"
+    bucket_name: lstm-pipeline-model-serving-fun
+    {c if b else ""}
+"""
+
+print(c)

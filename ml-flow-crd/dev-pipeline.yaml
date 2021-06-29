@@ -12,6 +12,15 @@ spec:
       step:
       - name: load-data
         mlfun: james759426/lstm-load-data:0.0.1
+        limits:
+          memory: 100Mi
+          cpu: 200m
+        requests:
+          memory: 50Mi
+          cpu: 100m
+        scale-fun:
+          cpu-percent: 50
+          scale-fun-max: 5
       - name: time-parser
         mlfun: james759426/lstm-time-parser:0.0.1
       - name: data-clean
