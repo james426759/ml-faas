@@ -13,12 +13,6 @@ RUN apt update
 
 WORKDIR /home/app/
 
-# User define
-RUN pip install pandas
-RUN pip install tensorflow==1.15
-RUN pip install keras==2.3.1
-RUN pip install sklearn
-
 COPY index.py           .
 COPY requirements.txt   .
 

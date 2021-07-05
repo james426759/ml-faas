@@ -3,16 +3,9 @@ import os
 import pandas as pd
 from datetime import datetime, timedelta
 from minio.error import S3Error
-# from keras.models import Sequential
-# from keras.layers import Dense, Dropout, Activation, Flatten, LSTM, TimeDistributed, RepeatVector
-# from keras.layers.normalization import BatchNormalization
-# from keras.optimizers import Adam
-# from keras.callbacks import EarlyStopping, ModelCheckpoint
-# import tensorflow as tf
 from pandas.core.common import SettingWithCopyWarning
 import warnings
 import json
-from sklearn.ensemble import RandomForestRegressor
 import numpy as np
 import joblib
 
@@ -33,38 +26,53 @@ def handle(req):
     pipeline = data['pipeline']
     function_name = data['function_name']
 
+    try:
+        selected_model = data['model']
+    except:
+        selected_model = 'null'
+
     function_bucket_list = data['function_bucket']
+    
     train_model_func_bucket_name = function_bucket_list['random-forest-pipeline-train-model']
+    
+    # 重組出所需的model名 {function name}-{file name}-{uuid}-{副檔名}
+    if data['user'] == 'dev':
+        train_model_func_file_name = train_model_func_bucket_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'joblib'
+    elif data['user'] == 'user':
+        train_model_func_file_name = selected_model
+
+    # 讀取所需資料的bucket name
     data_clean_func_bucket_name = function_bucket_list['random-forest-pipeline-data-clean']
-
     data_clean_pipeline_file_name = data_clean_func_bucket_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
-    uuid_renamed_h5 = train_model_func_bucket_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'joblib'
-    uuid_renamed_file = os.environ['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
+    
+    # uuid_renamed_h5 = train_model_func_bucket_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'joblib'
+    # uuid_renamed_file = os.environ['bucket_name'] + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
+    uuid_renamed_file_csv = function_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
 
-    basic_basth = '/home/app'
-    file_path = os.path.join(basic_basth, fname)
+    # basic_basth = '/home/app'
+    # file_path = os.path.join(basic_basth, fname)
 
 
-    client.fget_object(train_model_func_bucket_name, uuid_renamed_h5, '/home/app/model.joblib')
-    client.fget_object(data_clean_func_bucket_name, data_clean_pipeline_file_name, file_path)
+    client.fget_object(train_model_func_bucket_name, train_model_func_file_name, f"""/home/app/{file_uuid}-{train_model_func_file_name}""")
+    client.fget_object(data_clean_func_bucket_name, data_clean_pipeline_file_name, f"""/home/app/{data_clean_pipeline_file_name}""")
     client.fget_object('random-forest-condition', f"""random-forest-condition-{file_uuid}.json""", f"""/home/app/random-forest-condition-{file_uuid}.json""")
 
     with open(f"""/home/app/random-forest-condition-{file_uuid}.json""", 'r') as obj:
         condition = json.load(obj)
     condition = condition['condition']
 
-    data = pd.read_csv(file_path)
-    model = modelLoad(model_name='/home/app/model.joblib')
+    data = pd.read_csv(f"""/home/app/{data_clean_pipeline_file_name}""")
+    model = modelLoad(model_name=f"""/home/app/{file_uuid}-{train_model_func_file_name}""")
     data = newField(data, target_field=target_field)
     data_ok = correction(data=data, past_day=24, direction=direction, model=model, condition= condition, target_field=target_field)
-    data_ok.to_csv('/home/app/complete-data.csv')
+    data_ok.to_csv(f"""/home/app/{uuid_renamed_file_csv}""")
     
     found = client.bucket_exists(os.environ['bucket_name'])
     if not found:
         client.make_bucket(os.environ['bucket_name'])
 
 
-    client.fput_object(os.environ['bucket_name'], uuid_renamed_file, '/home/app/complete-data.csv')
+    client.fput_object(os.environ['bucket_name'], uuid_renamed_file_csv, f"""/home/app/{uuid_renamed_file_csv}""")
 
 
     return os.environ['bucket_name']

@@ -1,16 +1,9 @@
 import numpy as np
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation, Flatten, LSTM, TimeDistributed, RepeatVector
-from keras.layers.normalization import BatchNormalization
-from keras.optimizers import Adam
-from keras.callbacks import EarlyStopping, ModelCheckpoint
-import tensorflow as tf
 from minio import Minio
 from minio.error import S3Error
 import json
 import os
 from sklearn.ensemble import RandomForestRegressor
-import numpy as np
 import joblib
 
 def handle(req):
@@ -98,7 +91,7 @@ def handle(req):
     return os.environ['bucket_name']
 
 def buildModel(x_train, y_train):
-    forest = RandomForestRegressor()
+    forest = RandomForestRegressor(1000)
     joblib.dump(forest, "/home/app/forest_model.joblib")
 
     # model = Sequential()

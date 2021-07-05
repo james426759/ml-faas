@@ -11,6 +11,7 @@ import json
 import uuid
 import pika
 import time
+import datetime
 
 
 app = Flask(__name__)
@@ -86,9 +87,11 @@ def api_upload2(pipeline,model_bucket,model_name=''):
             data = {'fname':fname, 'file_uuid':file_uuid, 'pipeline':pipeline, 'model':model_name, 'function_name':i, 'function_bucket':function_bucket, 'user':'user'}
             channel.queue_declare(queue=i)
             channel.basic_publish(exchange='', routing_key=i, body='1')
+            print(datetime.datetime.now())
             r = requests.post(f"""http://10.20.1.54:31112/function/{i}""", json=data)
 
             if r.status_code == 200:
+                print(datetime.datetime.now())
                 method_frame, header_frame, body = channel.basic_get(queue=i, auto_ack=True)
                 if method_frame.message_count == 0:
                     print('=====================================================================')
@@ -98,9 +101,10 @@ def api_upload2(pipeline,model_bucket,model_name=''):
                 return jsonify({'Function':i, 'status_code':r.status_code, 'text':r.text, 'fail':'fail'})
         
         if r.status_code == 200:
-            uuid_renamed = i + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
-            url = client.presigned_get_object(f"""{pipeline}-model-serving-fun""", uuid_renamed)
-            return jsonify({'url':url})
+            # uuid_renamed = i + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
+            # url = client.presigned_get_object(f"""{pipeline}-model-serving-fun""", uuid_renamed)
+            # return jsonify({'url':url})
+            return 'success'
         else:
             return 'no url'
 
@@ -129,8 +133,10 @@ def dev_upload_file(pipeline):
     api_response = api_instance.get_namespaced_custom_object(group='kopf.dev', version='v1', plural='mlflows', name=pipeline, namespace='ml-faas')
 
     f = request.files['file']
+    file_uuid = str(uuid.uuid4())
     if f:
-        fname = f.filename
+        fname = f"""{file_uuid}-{f.filename}"""
+        # fname = f.filename
         f.save(os.path.join(file_dir, fname))
 
         found = client.bucket_exists(DEV_UPLOAD_FOLDER)
@@ -152,20 +158,22 @@ def dev_upload_file(pipeline):
                     DEV_PIPELINE_LIST.append(j)
                     function_bucket.update({j:j})
 
-        file_uuid = str(uuid.uuid4())
+        # file_uuid = str(uuid.uuid4())
         bucket_name = DEV_UPLOAD_FOLDER
 
         credentials = pika.PlainCredentials('user', 'user')
         connection = pika.BlockingConnection(pika.ConnectionParameters('10.20.1.54', '30672', '/', credentials, heartbeat=0))
         channel = connection.channel()
         
-        for i in DEV_PIPELINE_LIST:
+        for i in DEV_PIPELINE_LIST[0:6]:
             data = {'fname':fname, 'file_uuid':file_uuid, 'pipeline':pipeline, 'function_name':i, 'function_bucket':function_bucket, 'user':'dev'}
             channel.queue_declare(queue=i)
             channel.basic_publish(exchange='', routing_key=i, body='1')
+            print(datetime.datetime.now())
             r = requests.post(f"""http://10.20.1.54:31112/function/{i}""", json=data)
 
             if r.status_code == 200:
+                print(datetime.datetime.now())
                 method_frame, header_frame, body = channel.basic_get(queue=i, auto_ack=True)
                 if method_frame.message_count == 0:
                     print('=====================================================================')
@@ -175,9 +183,10 @@ def dev_upload_file(pipeline):
                 return jsonify({'Function':i, 'status_code':r.status_code, 'text':r.text, 'fail':'fail'})
 
         if r.status_code == 200:
-            uuid_renamed = i + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
-            url = client.presigned_get_object(DEV_PIPELINE_LIST[-1], uuid_renamed)
-            return jsonify({'url':url})
+            # uuid_renamed = i + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
+            # url = client.presigned_get_object(DEV_PIPELINE_LIST[-1], uuid_renamed)
+            # return jsonify({'url':url})
+            return 'success'
         else:
             return 'no url'
         

@@ -14,7 +14,7 @@ RUN apt update
 WORKDIR /home/app/
 
 # User define package
-RUN pip install pandas
+# RUN pip install pandas
 
 COPY index.py           .
 COPY requirements.txt   .

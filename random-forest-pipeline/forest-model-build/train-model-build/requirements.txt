@@ -1,1 +1,3 @@
 Minio
+numpy
+sklearn

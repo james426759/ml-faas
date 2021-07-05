@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resident-random-pipeline
+  # namespace: openfaas-fn
+spec:
+  selector:
+    matchLabels:
+      app: resident-random-pipeline
+  replicas: 1 # tells deployment to run 2 pods matching the template
+  template:
+    metadata:
+      labels:
+        app: resident-random-pipeline
+    spec:
+      containers:
+      - name: resident-random-pipeline
+        image: james759426/resident-random-pipeline:0.0.1
+        imagePullPolicy: Always
+      nodeSelector:
+        node-use: "training"

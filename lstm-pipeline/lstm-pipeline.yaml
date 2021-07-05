@@ -12,31 +12,31 @@ spec:
       step:
       - name: load-data
         mlfun: james759426/lstm-load-data:0.0.1
-        limits:
-          memory: 100Mi
-          cpu: 100m
-        requests:
-          memory: 50Mi
-          cpu: 100m
-        scale-fun:   
-          cpu-percent: 50
-          scale-fun-max: 5
+        # limits:
+        #   memory: 100Mi
+        #   cpu: 100m
+        # requests:
+        #   memory: 50Mi
+        #   cpu: 50m
+        # scale-fun:   
+        #   cpu-percent: 50
+        #   scale-fun-max: 5
       - name: time-parser
         mlfun: james759426/lstm-time-parser:0.0.1
-        limits:
-          memory: 100Mi
-          cpu: 100m
-        requests:
-          memory: 50Mi
-          cpu: 100m
+        # limits:
+        #   memory: 100Mi
+        #   cpu: 100m
+        # requests:
+        #   memory: 50Mi
+        #   cpu: 100m
       - name: data-clean
         mlfun: james759426/lstm-data-clean:0.0.1
-        limits:
-          memory: 100Mi
-          cpu: 100m
-        requests:
-          memory: 50Mi
-          cpu: 100m
+        # limits:
+        #   memory: 100Mi
+        #   cpu: 100m
+        # requests:
+        #   memory: 50Mi
+        #   cpu: 100m
     stage2:
       name: LSTM-model-build
       rule: ['dev']
@@ -44,28 +44,28 @@ spec:
       step:
       - name: train-data-build
         mlfun: james759426/lstm-train-data-build:0.0.1
-        limits:
-          memory: 100Mi
-          cpu: 200m
-        requests:
-          memory: 50Mi
-          cpu: 100m
+        # limits:
+        #   memory: 100Mi
+        #   cpu: 200m
+        # requests:
+        #   memory: 50Mi
+        #   cpu: 100m
       - name: train-model-build
         mlfun: james759426/lstm-train-model-build:0.0.1
-        limits:
-          memory: 100Mi
-          cpu: 200m
-        requests:
-          memory: 50Mi
-          cpu: 100m
+        # limits:
+        #   memory: 100Mi
+        #   cpu: 200m
+        # requests:
+        #   memory: 50Mi
+        #   cpu: 100m
       - name: train-model
         mlfun: james759426/lstm-train-model:0.0.1
-        limits:
-          memory: 100Mi
-          cpu: 200m
-        requests:
-          memory: 50Mi
-          cpu: 100m
+        # limits:
+        #   memory: 100Mi
+        #   cpu: 200m
+        # requests:
+        #   memory: 50Mi
+        #   cpu: 100m
     stage3:
       name: model-serving
       rule: ['dev', 'user']
@@ -73,12 +73,12 @@ spec:
       step:
       - name: model-serving-fun
         mlfun: james759426/lstm-model-serving-fun:0.0.1
-        limits:
-          memory: 100Mi
-          cpu: 200m
-        requests:
-          memory: 50Mi
-          cpu: 100m
+        # limits:
+        #   memory: 100Mi
+        #   cpu: 200m
+        # requests:
+        #   memory: 50Mi
+        #   cpu: 100m
     # stage4:
     #   name: data-visualization
     #   rule: ['dev', 'user']

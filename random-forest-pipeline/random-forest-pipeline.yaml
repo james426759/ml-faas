@@ -19,7 +19,7 @@ spec:
     stage2:
       name: forest-model-build
       rule: ['dev']
-      node: training
+      node: serving
       step:
       - name: train-data-build
         mlfun: james759426/random-forest-train-data-build:0.0.1
@@ -30,7 +30,7 @@ spec:
     stage3:
       name: model-serving
       rule: ['dev', 'user']
-      node: serving
+      node: training
       step:
       - name: model-serving-fun
         mlfun: james759426/random-forest-model-serving-fun:0.0.1

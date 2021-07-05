@@ -1,17 +1,11 @@
 import numpy as np
 import pandas as pd
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation, Flatten, LSTM, TimeDistributed, RepeatVector
-from keras.layers.normalization import BatchNormalization
-from keras.optimizers import Adam
-from keras.callbacks import EarlyStopping, ModelCheckpoint
-import tensorflow as tf
-# from tensorflow import keras
 from datetime import datetime, timedelta
 import os
 from tqdm import tqdm
-# from sklearn.preprocessing import MinMaxScaler
-# from sklearn.metrics import mean_squared_error
+from sklearn.ensemble import RandomForestRegressor
+import joblib
+
 pd.set_option('mode.chained_assignment', None)
 
 class NewChebyLSTM:
@@ -111,9 +105,9 @@ class NewChebyLSTM:
                     pass
                 else:
                     x = np.array(self.data[self.target_field].iloc[i-past_day-futureDay:i-futureDay])
-                    x = x.reshape(x.shape[0], 1)
+                #     x = x.reshape(x.shape[0], 1)
                     self.x_train.append(x)
-                    self.y_train.append(np.array(self.data.iloc[i-futureDay:i][self.target_field]))
+                    self.y_train.append(self.data.iloc[i-futureDay:i][self.target_field].tolist())
         else:
             for i in range((past_day+futureDay)*288, self.data.shape[0]):
                 # print(self.data.iloc[i-futureDay:i][self.target_field])
@@ -123,11 +117,12 @@ class NewChebyLSTM:
                     pass
                 else:
                     x = np.array(self.data[self.target_field].iloc[i-(past_day*288)-(futureDay*288):i-(futureDay*288):288])
-                    x = x.reshape(x.shape[0], 1)
+                #     x = x.reshape(x.shape[0], 1)
                     self.x_train.append(x)
-                    self.y_train.append(np.array(self.data.iloc[i-futureDay:i][self.target_field]))
+                    self.y_train.append(self.data.iloc[i-futureDay:i][self.target_field].tolist())
         self.x_train = np.array(self.x_train)
         self.y_train = np.array(self.y_train)
+        self.y_train = self.y_train.flatten()
         
     def shuffle(self, seed=10):
         np.random.seed(seed)
@@ -136,33 +131,15 @@ class NewChebyLSTM:
         self.x_train = self.x_train[randomList]
         self.y_train = self.y_train[randomList]
 
-    def buildModel(self):
-        self.model = Sequential()
-        # print(np.unique(np.isnan(self.y_train), return_counts=True))
-        # print(np.unique(np.isnan(self.x_train), return_counts=True))
-        self.model.add(LSTM(10, input_length=self.x_train.shape[1], input_dim=1))
-        # self.model.add(LSTM(16, return_sequences = True, input_length=self.x_train.shape[1], input_dim=1))
-        # self.model.add(Dropout(0.2))
-        # self.model.add(LSTM(32, return_sequences = True))
-        # self.model.add(Dropout(0.2))
-        # self.model.add(LSTM(50, return_sequences = True))
-        # self.model.add(Dropout(0.2))
-        # self.model.add(LSTM(16))
-        self.model.add(Dense(1))
-        opt = tf.keras.optimizers.Adam(learning_rate=0.001)
-        self.model.compile(loss="mse", optimizer=opt)
-        self.model.summary()
-        callback = EarlyStopping(monitor="loss", patience=10, verbose=1, mode="auto")
-        self.x_train = self.x_train.astype(np.float32)
-        self.y_train = self.y_train.astype(np.float32)
-        self.model.fit(self.x_train, self.y_train, epochs=10, batch_size=128, callbacks=[callback])
+    def buildModel(self, tree_num):
+        self.model = RandomForestRegressor(tree_num)
+        self.model.fit(self.x_train, self.y_train)
 
-    def modelSave(self, model_name='./models/lstm_model.h5'):
-        self.model.save(model_name)
+    def modelSave(self, model_name='./models/forest_model.joblib'):
+	    joblib.dump(self.model, model_name)
 
-    def modelLoad(self, model_name='./models/lstm_model.h5'):
-        self.model = tf.keras.models.load_model(model_name, compile = False)
-        self.model.summary()
+    def modelLoad(self, model_name='./models/forest_model.joblib'):
+        self.model = joblib.load(model_name)
 
     def correction(self, past_day = 24, correction_day = 12):
         if self.direction:
@@ -173,7 +150,7 @@ class NewChebyLSTM:
                         if mask[i-past_day:i].count(True) == 0:
                             self.test = []
                             x = np.array(self.data[self.target_field].iloc[i-past_day:i])
-                            x = x.reshape(x.shape[0], 1)
+                            # x = x.reshape(x.shape[0], 1)
                             self.test.append(x)
                             self.test = np.array(self.test)
                             y_hat = self.model.predict(self.test)
@@ -188,7 +165,7 @@ class NewChebyLSTM:
                         if mask[i-past_day*288:i:288].count(True) == 0:
                             self.test = []
                             x = np.array(self.data[self.target_field].iloc[i-past_day*288:i:288])
-                            x = x.reshape(x.shape[0], 1)
+                            # x = x.reshape(x.shape[0], 1)
                             self.test.append(x)
                             self.test = np.array(self.test)
                             y_hat = self.model.predict(self.test)
@@ -248,136 +225,41 @@ class NewChebyLSTM:
                             pass
 
 if __name__ == "__main__":
-    #files = os.listdir("../enddata/")
-    # f = [files[:2], files[2:4], files[4:6], files[6:8], files[8:10], files[10:12], files[12:14], files[14:16], files[16:18], files[18:]]
-    #files = os.listdir("../new10dataNOna/")
-    #f =[files[:2], files[2:4], files[4:6], files[6:8], files[8:10], files[10:12]]
-    #key = 5
-    # f[key] = ["01_原臺南州廳綜合氣象站.csv"]
-
-    # files = os.listdir("../LSTM/")
-    # f = files[:3], files[3:6], files[6:9], files[9:12], files[12:15], files[15:18], files[18:21], files[21:24], files[24:27], files[27:30], files[30:]]
-    # key = 0
     f = ["test.csv"]
     for i in f:
        
         try:
             print(i)
             print("load data start")
-            # data = NewChebyLSTM("../enddata/" + i)
             data = NewChebyLSTM("/" + i)
             print("load data done")
             print("time parser start")
             data.timeParser()
-            #data.timeParser(time_format="YYYY/mm/dd HH:MM")
             print("time parser done")
             print("anomaly detection start")
             data.normalization()
             data.anomalyDetection()
-            #data.target_field = 'Hum'
-            #data.anomalyDetection(value_maximun = 100, value_minimun = 30)
-            #data.target_field = 'Temp'
             print("anomaly detection done")
             data.outputToCsv("/root/" + i)
-            # data.outputToCsv("../clean_data/"+str(i))
-            # print("clean_data_done")
+            
             data.buildTrain(past_day=24)
             data.shuffle()
-            data.buildModel()
-            data.modelSave(model_name="/root/"+i+".h5")
-            # data.target_field = 'Hum'
-            # data.buildTrain(past_day=24)
-            # data.shuffle()
-            # data.buildModel()
-            # data.modelSave(model_name="../model/Hum_V_"+i+".h5")
-            # data.direction = False
-            # data.target_field = 'Temp'
-            # data.buildTrain(past_day=28)
-            # data.shuffle()
-            # data.buildModel()
-            # data.modelSave(model_name="../model/Temp_H_"+i+".h5")
-            # data.target_field = 'Hum'
-            # data.buildTrain(past_day=28)
-            # data.shuffle()
-            # data.buildModel()
-            # data.modelSave(model_name="../model/Hum_H_"+i+".h5")
-
-            #data.direction = True
-            #data.target_field = 'Temp'
+            data.buildModel(100)
+            data.modelSave(model_name="/root/"+i+".joblib")
             data.set_condition()
-            # data.modelLoad("../model/1000Temp_V_"+"01_原臺南州廳綜合氣象站.csv"+".h5")
-            data.modelLoad("/root/"+i+".h5")
+            data.modelLoad("/root/"+i+".joblib")
             data.newField()
             try:
                 print(data.target_field+" vertical correction start")
                 data.correction(past_day = 24)
-                #data.reverse()
-                #print("reverse")
-                #data.correction(past_day = 24)
                 print(data.target_field+" vertical correction done")
             except Exception as e:
                 print(e)
-            #data.reverse()
-
-            #data.direction = False
-            # data.modelLoad("../model/1000Temp_H_"+"01_原臺南州廳綜合氣象站.csv"+".h5")
-            #data.modelLoad("../model/Temp_H_"+"01_原臺南州廳綜合氣象站.csv"+".h5")
-            #try:
-            #    print(data.target_field+" horizontal correction start")
-            #    data.correction(past_day = 28, correction_day=14)
-            #    data.reverse()
-            #    print("reverse")
-            #    data.correction(past_day = 28, correction_day=14)
-            #    print(data.target_field+" horizontal correction done")
-            #except Exception as e:
-            #    print(e)
-            #data.reverse()
-
-            #data.direction = True
-            #data.target_field = 'Hum'
-            #data.set_condition()
-            # data.modelLoad("../model/1000Hum_V_"+"01_原臺南州廳綜合氣象站.csv"+".h5")
-            #data.modelLoad("../model/Hum_V_"+"01_原臺南州廳綜合氣象站.csv"+".h5")
-            #data.newField()
-            #try:
-            #    print(data.target_field+" vertical correction start")
-            #    data.correction(past_day = 24)
-            #    data.reverse()
-            #    print("reverse")
-            #    data.correction(past_day = 24)
-            #    print(data.target_field+" vertical correction done")
-            #except Exception as e:
-            #    print(e)
-            #data.reverse()
-            
-            #data.direction = False
-            # data.modelLoad("../model/1000Hum_H_"+"01_原臺南州廳綜合氣象站.csv"+".h5")
-            #data.modelLoad("../model/Hum_H_"+"01_原臺南州廳綜合氣象站.csv"+".h5")
-            #try:
-            #    print(data.target_field+" horizontal correction start")
-            #    data.correction(past_day = 28, correction_day=14)
-            #    data.reverse()
-            #    print("reverse")
-            #    data.correction(past_day = 28, correction_day=14)
-            #    print(data.target_field+" horizontal correction done")
-            #except Exception as e:
-            #    print(e)
-            #data.reverse()
 
             data.normalization()
-            # data.outputToCsv("../LSTM/1000LSTM_"+str(i))
             data.outputToCsv("/root/new"+i+".csv")
             print("output done")
-            
-            # data = NewChebyLSTM("../LSTM/" + i)
-            # data.timeParser(time_format="YYYY-mm-dd HH:MM:SS")
-            #data.target_field = 'Temp'
-            #data.smooth()
-            #data.target_field = "Hum"
-            #data.smooth(gap = 3)
-            #data.outputToCsv("../LSTM/sm_LSTM_"+str(i))
+ 
         
         except Exception as e:
             print(e)
-
-        

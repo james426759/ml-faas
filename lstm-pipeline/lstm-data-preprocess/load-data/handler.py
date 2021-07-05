@@ -1,4 +1,3 @@
-import pandas as pd 
 import json
 from minio import Minio
 import os
