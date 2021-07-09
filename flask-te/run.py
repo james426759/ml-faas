@@ -170,17 +170,21 @@ def dev_upload_file(pipeline):
             channel.queue_declare(queue=i)
             channel.basic_publish(exchange='', routing_key=i, body='1')
             print(datetime.datetime.now())
-            r = requests.post(f"""http://10.20.1.54:31112/function/{i}""", json=data)
+            while True:
+                r = requests.post(f"""http://10.20.1.54:31112/function/{i}""", json=data)
 
-            if r.status_code == 200:
-                print(datetime.datetime.now())
-                method_frame, header_frame, body = channel.basic_get(queue=i, auto_ack=True)
-                if method_frame.message_count == 0:
-                    print('=====================================================================')
-                    res = requests.post(f"""http://admin:admin@10.20.1.54:31112/system/scale-function/{i}""", json={"replicas": 0})
-                    print({'Function':i, 'status_code':r.status_code, 'text':r.text})
-            else:
-                return jsonify({'Function':i, 'status_code':r.status_code, 'text':r.text, 'fail':'fail'})
+                if r.status_code == 200:
+                    print(datetime.datetime.now())
+                    method_frame, header_frame, body = channel.basic_get(queue=i, auto_ack=True)
+                    if method_frame.message_count == 0:
+                        print('=====================================================================')
+                        res = requests.post(f"""http://admin:admin@10.20.1.54:31112/system/scale-function/{i}""", json={"replicas": 0})
+                        print({'Function':i, 'status_code':r.status_code, 'text':r.text})
+                        break
+                elif r.status_code == 503:
+                    # return jsonify({'Function':i, 'status_code':r.status_code, 'text':r.text, 'fail':'fail'})
+                    print(f"""fuck-pending-{i}-{datetime.datetime.now()}""")
+                    continue
 
         if r.status_code == 200:
             # uuid_renamed = i + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]

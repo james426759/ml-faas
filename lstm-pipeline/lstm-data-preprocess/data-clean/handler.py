@@ -25,7 +25,7 @@ def handle(req):
     function_name = data['function_name']
 
     function_bucket_list = data['function_bucket']
-    time_parser_func_bucket_name = function_bucket_list['lstm-pipeline-time-parser']
+    time_parser_func_bucket_name = function_bucket_list[f'''{data['pipeline']}-time-parser''']
 
     time_parser_func_file_name = time_parser_func_bucket_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
     uuid_renamed_file_csv = function_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]

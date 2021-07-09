@@ -1,0 +1,13 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: resident-lstm-pipeline-20
+spec:
+  template:
+    spec:
+      containers:
+      - name: resident-lstm-pipeline-20
+        image: james759426/resident-lstm-pipeline-20:0.0.1
+        command: ["/bin/bash","-c","python3 liao_newchebyLSTM.py"]
+      restartPolicy: Never
+  # backoffLimit: 4

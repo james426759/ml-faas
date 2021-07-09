@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resident-lstm-pipeline-80
+  namespace: openfaas-fn
+spec:
+  selector:
+    matchLabels:
+      app: resident-lstm-pipeline-80
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: resident-lstm-pipeline-80
+    spec:
+      containers:
+      - name: resident-lstm-pipeline-80
+        image: james759426/resident-lstm-pipeline-80:0.0.1
+        # command: ["/bin/bash","-c","python3 liao_newchebyLSTM.py"]
+        resources:
+          requests:
+            # memory: "64Mi"
+            cpu: "8000m"
+          # limits:
+          #   memory: "128Mi"
+          #   cpu: "500m"
+        imagePullPolicy: Always
+      nodeSelector:
+        node-use: "training"

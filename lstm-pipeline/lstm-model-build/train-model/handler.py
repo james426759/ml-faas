@@ -26,10 +26,10 @@ def handle(req):
     function_name = data['function_name']
 
     function_bucket_list = data['function_bucket']
-    train_model_build_func_bucket_name = function_bucket_list['lstm-pipeline-train-model-build']
+    train_model_build_func_bucket_name = function_bucket_list[f'''{data['pipeline']}-train-model-build''']
     train_model_build_func_file_name = train_model_build_func_bucket_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'h5'
 
-    train_data_build_func_bucket_name = function_bucket_list['lstm-pipeline-train-data-build']
+    train_data_build_func_bucket_name = function_bucket_list[f'''{data['pipeline']}-train-data-build''']
     train_data_build_func_file_name = train_data_build_func_bucket_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'json'
 
     uuid_renamed_file_h5 = function_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'h5'
@@ -82,7 +82,7 @@ def handle(req):
 
 def train(model, x_train, y_train):
     callback = EarlyStopping(monitor="loss", patience=10, verbose=1, mode="auto")
-    model.fit(x_train, y_train, epochs=100, batch_size=128, callbacks=[callback])
+    model.fit(x_train, y_train, epochs=80, batch_size=128, callbacks=[callback])
     return model
 
 

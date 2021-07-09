@@ -26,7 +26,7 @@ def handle(req):
 
     function_bucket_list = data['function_bucket']
 
-    data_clean_func_bucket_name = function_bucket_list['lstm-pipeline-data-clean']
+    data_clean_func_bucket_name = function_bucket_list[f'''{data['pipeline']}-data-clean''']
     data_clean_func_file_name = data_clean_func_bucket_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
     uuid_renamed_file_json = function_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'json'
     

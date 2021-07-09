@@ -1,0 +1,64 @@
+apiVersion: kopf.dev/v1
+kind: MLFlow
+metadata:
+  name: random-forest-pipeline
+  namespace: ml-faas
+spec:
+  pipeline:
+    stage1:
+      name: data-preprocess
+      rule: ['dev', 'user']
+      node: training
+      step:
+      - name: load-data
+        mlfun: james759426/random-forest-load-data:0.0.1
+        requests:
+          # memory: 50Mi
+          cpu: "2000m"
+      - name: time-parser
+        mlfun: james759426/random-forest-time-parser:0.0.1
+        requests:
+          # memory: 50Mi
+          cpu: "2000m"
+      - name: data-clean
+        mlfun: james759426/random-forest-data-clean:0.0.1
+        requests:
+          # memory: 50Mi
+          cpu: "8000m"
+    stage2:
+      name: forest-model-build
+      rule: ['dev']
+      node: serving
+      step:
+      - name: train-data-build
+        mlfun: james759426/random-forest-train-data-build:0.0.1
+        requests:
+          # memory: 50Mi
+          cpu: "8000m"
+      - name: train-model-build
+        mlfun: james759426/random-forest-train-model-build:0.0.1
+        requests:
+          # memory: 50Mi
+          cpu: "6000m"
+      - name: train-model
+        mlfun: james759426/random-forest-train-model:0.0.1
+        requests:
+          # memory: 50Mi
+          cpu: "8000m"
+    stage3:
+      name: model-serving
+      rule: ['dev', 'user']
+      node: training
+      step:
+      - name: model-serving-fun
+        mlfun: james759426/random-forest-model-serving-fun:0.0.1
+        requests:
+          # memory: 50Mi
+          cpu: "8000m"
+    # stage4:
+    #   name: data-visualization
+    #   rule: ['dev', 'user']
+    #   node: serving
+    #   step:
+    #   - name: data-visualization-fun
+    #     mlfun: james759426/data-visualization-fun:0.0.1

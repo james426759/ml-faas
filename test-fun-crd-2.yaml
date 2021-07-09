@@ -10,10 +10,10 @@ spec:
   # limits:
   #   memory: 1000Mi
   #   cpu: 2000m
-  # requests:
-  #   memory: 500Mi
-  #   cpu: 1000m
+  requests:
+    # memory: 10Gi
+    cpu: "4"
   # labels:
   #   com.openfaas.scale.min: "0"
-  # constraints: 
-  #   -  "node-use=serving"
+  constraints: 
+    -  "node-use=serving"

@@ -1,8 +1,23 @@
 apiVersion: openfaas.com/v1
 kind: Function
 metadata:
-  name: time-parser
+  name: nodeinfo-1
   namespace: openfaas-fn
 spec:
-  name: time-parser
-  image: james759426/time-parser:0.0.1
+  name: nodeinfo-1
+  handler: node main.js
+  image: functions/nodeinfo:latest
+  environment:
+    read_timeout: "21600s"
+    write_timeout: "21600s"
+    exec_timeout: "21600s"
+  # limits:
+  #   memory: 1000Mi
+  #   cpu: 2000m
+  requests:
+    # memory: 5Gi
+    cpu: "20"
+  labels:
+    com.openfaas.scale.min: "0"
+  constraints: 
+    -  "node-use=serving"

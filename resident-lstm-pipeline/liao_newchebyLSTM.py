@@ -264,119 +264,33 @@ if __name__ == "__main__":
         try:
             print(i)
             print("load data start")
-            # data = NewChebyLSTM("../enddata/" + i)
             data = NewChebyLSTM("/" + i)
             print("load data done")
             print("time parser start")
             data.timeParser()
-            #data.timeParser(time_format="YYYY/mm/dd HH:MM")
             print("time parser done")
             print("anomaly detection start")
             data.normalization()
             data.anomalyDetection()
-            #data.target_field = 'Hum'
-            #data.anomalyDetection(value_maximun = 100, value_minimun = 30)
-            #data.target_field = 'Temp'
             print("anomaly detection done")
             data.outputToCsv("/root/" + i)
-            # data.outputToCsv("../clean_data/"+str(i))
-            # print("clean_data_done")
             data.buildTrain(past_day=24)
             data.shuffle()
             data.buildModel()
             data.modelSave(model_name="/root/"+i+".h5")
-            # data.target_field = 'Hum'
-            # data.buildTrain(past_day=24)
-            # data.shuffle()
-            # data.buildModel()
-            # data.modelSave(model_name="../model/Hum_V_"+i+".h5")
-            # data.direction = False
-            # data.target_field = 'Temp'
-            # data.buildTrain(past_day=28)
-            # data.shuffle()
-            # data.buildModel()
-            # data.modelSave(model_name="../model/Temp_H_"+i+".h5")
-            # data.target_field = 'Hum'
-            # data.buildTrain(past_day=28)
-            # data.shuffle()
-            # data.buildModel()
-            # data.modelSave(model_name="../model/Hum_H_"+i+".h5")
-
-            #data.direction = True
-            #data.target_field = 'Temp'
             data.set_condition()
-            # data.modelLoad("../model/1000Temp_V_"+"01_原臺南州廳綜合氣象站.csv"+".h5")
-            data.modelLoad("/root/"+i+".h5")
-            data.newField()
-            try:
-                print(data.target_field+" vertical correction start")
-                data.correction(past_day = 24)
-                #data.reverse()
-                #print("reverse")
-                #data.correction(past_day = 24)
-                print(data.target_field+" vertical correction done")
-            except Exception as e:
-                print(e)
-            #data.reverse()
+            # data.modelLoad("/root/"+i+".h5")
+            # data.newField()
+            # try:
+            #     print(data.target_field+" vertical correction start")
+            #     data.correction(past_day = 24)
+            #     print(data.target_field+" vertical correction done")
+            # except Exception as e:
+            #     print(e)
 
-            #data.direction = False
-            # data.modelLoad("../model/1000Temp_H_"+"01_原臺南州廳綜合氣象站.csv"+".h5")
-            #data.modelLoad("../model/Temp_H_"+"01_原臺南州廳綜合氣象站.csv"+".h5")
-            #try:
-            #    print(data.target_field+" horizontal correction start")
-            #    data.correction(past_day = 28, correction_day=14)
-            #    data.reverse()
-            #    print("reverse")
-            #    data.correction(past_day = 28, correction_day=14)
-            #    print(data.target_field+" horizontal correction done")
-            #except Exception as e:
-            #    print(e)
-            #data.reverse()
-
-            #data.direction = True
-            #data.target_field = 'Hum'
-            #data.set_condition()
-            # data.modelLoad("../model/1000Hum_V_"+"01_原臺南州廳綜合氣象站.csv"+".h5")
-            #data.modelLoad("../model/Hum_V_"+"01_原臺南州廳綜合氣象站.csv"+".h5")
-            #data.newField()
-            #try:
-            #    print(data.target_field+" vertical correction start")
-            #    data.correction(past_day = 24)
-            #    data.reverse()
-            #    print("reverse")
-            #    data.correction(past_day = 24)
-            #    print(data.target_field+" vertical correction done")
-            #except Exception as e:
-            #    print(e)
-            #data.reverse()
-            
-            #data.direction = False
-            # data.modelLoad("../model/1000Hum_H_"+"01_原臺南州廳綜合氣象站.csv"+".h5")
-            #data.modelLoad("../model/Hum_H_"+"01_原臺南州廳綜合氣象站.csv"+".h5")
-            #try:
-            #    print(data.target_field+" horizontal correction start")
-            #    data.correction(past_day = 28, correction_day=14)
-            #    data.reverse()
-            #    print("reverse")
-            #    data.correction(past_day = 28, correction_day=14)
-            #    print(data.target_field+" horizontal correction done")
-            #except Exception as e:
-            #    print(e)
-            #data.reverse()
-
-            data.normalization()
-            # data.outputToCsv("../LSTM/1000LSTM_"+str(i))
-            data.outputToCsv("/root/new"+i+".csv")
-            print("output done")
-            
-            # data = NewChebyLSTM("../LSTM/" + i)
-            # data.timeParser(time_format="YYYY-mm-dd HH:MM:SS")
-            #data.target_field = 'Temp'
-            #data.smooth()
-            #data.target_field = "Hum"
-            #data.smooth(gap = 3)
-            #data.outputToCsv("../LSTM/sm_LSTM_"+str(i))
-        
+            # data.normalization()
+            # data.outputToCsv("/root/new"+i+".csv")
+            # print("output done")
         except Exception as e:
             print(e)
 

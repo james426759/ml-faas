@@ -39,7 +39,7 @@ def handle(req):
 
     # 讀取所需資料的bucket name
     function_bucket_list = data['function_bucket']
-    train_model_func_bucket_name = function_bucket_list['lstm-pipeline-train-model']
+    train_model_func_bucket_name = function_bucket_list[f'''{data['pipeline']}-train-model''']
 
     # 重組出所需的model名 {function name}-{file name}-{uuid}-{副檔名}
     if data['user'] == 'dev':
@@ -48,7 +48,7 @@ def handle(req):
         train_model_func_file_name = selected_model
 
     # 讀取所需資料的bucket name
-    data_clean_func_bucket_name = function_bucket_list['lstm-pipeline-data-clean']
+    data_clean_func_bucket_name = function_bucket_list[f'''{data['pipeline']}-data-clean''']
     data_clean_func_file_name = data_clean_func_bucket_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
 
     # 重組出所需的資料名 {function name}-{file name}-{uuid}-{副檔名}

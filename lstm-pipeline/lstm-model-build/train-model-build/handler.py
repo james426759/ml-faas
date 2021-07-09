@@ -27,7 +27,7 @@ def handle(req):
 
     function_bucket_list = data['function_bucket']
 
-    train_data_build_func_bucket_name = function_bucket_list['lstm-pipeline-train-data-build']
+    train_data_build_func_bucket_name = function_bucket_list[f'''{data['pipeline']}-train-data-build''']
     train_data_build_func_file_name = train_data_build_func_bucket_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'json'
 
     uuid_renamed_file_h5 = function_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'h5'
