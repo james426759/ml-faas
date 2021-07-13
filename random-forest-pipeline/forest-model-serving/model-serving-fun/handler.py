@@ -33,7 +33,7 @@ def handle(req):
 
     function_bucket_list = data['function_bucket']
     
-    train_model_func_bucket_name = function_bucket_list['random-forest-pipeline-train-model']
+    train_model_func_bucket_name = function_bucket_list[f'''{data['pipeline']}-train-model''']
     
     # 重組出所需的model名 {function name}-{file name}-{uuid}-{副檔名}
     if data['user'] == 'dev':
@@ -42,7 +42,7 @@ def handle(req):
         train_model_func_file_name = selected_model
 
     # 讀取所需資料的bucket name
-    data_clean_func_bucket_name = function_bucket_list['random-forest-pipeline-data-clean']
+    data_clean_func_bucket_name = function_bucket_list[f'''{data['pipeline']}-data-clean''']
     data_clean_pipeline_file_name = data_clean_func_bucket_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
     
     # uuid_renamed_h5 = train_model_func_bucket_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + 'joblib'
@@ -55,7 +55,7 @@ def handle(req):
 
     client.fget_object(train_model_func_bucket_name, train_model_func_file_name, f"""/home/app/{file_uuid}-{train_model_func_file_name}""")
     client.fget_object(data_clean_func_bucket_name, data_clean_pipeline_file_name, f"""/home/app/{data_clean_pipeline_file_name}""")
-    client.fget_object('random-forest-condition', f"""random-forest-condition-{file_uuid}.json""", f"""/home/app/random-forest-condition-{file_uuid}.json""")
+    client.fget_object(f'''{data['pipeline']}-condition''', f"""random-forest-condition-{file_uuid}.json""", f"""/home/app/random-forest-condition-{file_uuid}.json""")
 
     with open(f"""/home/app/random-forest-condition-{file_uuid}.json""", 'r') as obj:
         condition = json.load(obj)

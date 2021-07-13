@@ -23,9 +23,10 @@ def handle(req):
     file_uuid = data['file_uuid']
     pipeline = data['pipeline']
     function_name = data['function_name']
+    pipeline_condition = f'''{data['pipeline']}-condition'''
 
     function_bucket_list = data['function_bucket']
-    time_parser_func_bucket_name = function_bucket_list['random-forest-pipeline-time-parser']
+    time_parser_func_bucket_name = function_bucket_list[f'''{data['pipeline']}-time-parser''']
 
     time_parser_func_file_name = time_parser_func_bucket_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
     uuid_renamed_file_csv = function_name + '-' + fname.split('.')[0] + '-' + file_uuid + '.' + fname.split('.')[1]
@@ -54,14 +55,14 @@ def handle(req):
     data.to_csv(f"""/home/app/{uuid_renamed_file_csv}""")
 
     found = client.bucket_exists(os.environ['bucket_name'])
-    found1 = client.bucket_exists("random-forest-condition")
+    found1 = client.bucket_exists(pipeline_condition)
     if not found:
         client.make_bucket(os.environ['bucket_name'])
     if not found1:
-        client.make_bucket("random-forest-condition")
+        client.make_bucket(pipeline_condition)
 
     client.fput_object(os.environ['bucket_name'], uuid_renamed_file_csv, f"""/home/app/{uuid_renamed_file_csv}""")
-    client.fput_object("random-forest-condition", f"""random-forest-condition-{file_uuid}.json""", f"""/home/app/random-forest-condition-{file_uuid}.json""")
+    client.fput_object(pipeline_condition, f"""random-forest-condition-{file_uuid}.json""", f"""/home/app/random-forest-condition-{file_uuid}.json""")
 
     return os.environ['bucket_name']
 

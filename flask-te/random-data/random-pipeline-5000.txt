@@ -1,0 +1,31 @@
+ * Serving Flask app 'run' (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: on
+2021-07-13 18:07:01.041960
+2021-07-13 18:07:09.458743
+=====================================================================
+{'Function': 'random-forest-pipeline-5000-load-data', 'status_code': 200, 'text': 'random-forest-pipeline-5000-load-data\n'}
+2021-07-13 18:07:14.487761
+2021-07-13 18:07:22.415267
+=====================================================================
+{'Function': 'random-forest-pipeline-5000-time-parser', 'status_code': 200, 'text': 'random-forest-pipeline-5000-time-parser\n'}
+2021-07-13 18:07:22.436630
+2021-07-13 18:07:43.738081
+=====================================================================
+{'Function': 'random-forest-pipeline-5000-data-clean', 'status_code': 200, 'text': 'random-forest-pipeline-5000-data-clean\n'}
+2021-07-13 18:07:43.761244
+2021-07-13 18:08:05.184941
+=====================================================================
+{'Function': 'random-forest-pipeline-5000-train-data-build', 'status_code': 200, 'text': 'random-forest-pipeline-5000-train-data-build\n'}
+2021-07-13 18:08:05.207560
+2021-07-13 18:08:21.732264
+=====================================================================
+{'Function': 'random-forest-pipeline-5000-train-model-build', 'status_code': 200, 'text': 'random-forest-pipeline-5000-train-model-build\n'}
+2021-07-13 18:08:26.759706
+2021-07-13 18:20:56.365628
+=====================================================================
+{'Function': 'random-forest-pipeline-5000-train-model', 'status_code': 200, 'text': 'random-forest-pipeline-5000-train-model\n'}
+
+10.0.0.135 - - [13/Jul/2021 18:20:56] "POST /dev/upload/random-forest-pipeline-5000/ HTTP/1.1" 200 -  //結束

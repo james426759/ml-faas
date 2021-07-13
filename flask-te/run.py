@@ -181,6 +181,8 @@ def dev_upload_file(pipeline):
                         res = requests.post(f"""http://admin:admin@10.20.1.54:31112/system/scale-function/{i}""", json={"replicas": 0})
                         print({'Function':i, 'status_code':r.status_code, 'text':r.text})
                         break
+                # else:
+                #     return jsonify({'Function':i, 'status_code':r.status_code, 'text':r.text, 'fail':'fail'})
                 elif r.status_code == 503:
                     # return jsonify({'Function':i, 'status_code':r.status_code, 'text':r.text, 'fail':'fail'})
                     print(f"""fuck-pending-{i}-{datetime.datetime.now()}""")
